@@ -1,0 +1,54 @@
+.weekstrip {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.weekstrip-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border-radius: var(--r-control);
+}
+
+.weekstrip-today {
+  background: var(--surface-2);
+}
+
+.weekstrip-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.weekstrip-dots {
+  display: flex;
+  gap: 3px;
+  min-height: 8px;
+}
+
+.weekstrip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+}
+
+.weekstrip-dot-push {
+  background: var(--push);
+  border-color: var(--push);
+}
+
+.weekstrip-dot-pull {
+  background: var(--pull);
+  border-color: var(--pull);
+}
+
+.weekstrip-dot-legs {
+  background: var(--legs);
+  border-color: var(--legs);
+}

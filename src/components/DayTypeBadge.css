@@ -1,0 +1,32 @@
+.dtb {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.dtb-md {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+.dtb-sm {
+  font-size: 10px;
+  padding: 2px 8px;
+}
+
+.dtb-push {
+  color: var(--push);
+  background: var(--push-dim);
+}
+
+.dtb-pull {
+  color: var(--pull);
+  background: var(--pull-dim);
+}
+
+.dtb-legs {
+  color: var(--legs);
+  background: var(--legs-dim);
+}

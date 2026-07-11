@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="115" fill="#0B0C0F"/>
+  <!-- ember ring: three arcs in day-type colors + gold -->
+  <g fill="none" stroke-linecap="round" stroke-width="34">
+    <path d="M 256 96 A 160 160 0 0 1 394.6 176" stroke="#FF6B57"/>
+    <path d="M 411.6 208 A 160 160 0 0 1 336 397.4" stroke="#4DA3FF"/>
+    <path d="M 304 411.6 A 160 160 0 0 1 176 394.6" stroke="#8FE388"/>
+  </g>
+  <!-- gold spark / bolt -->
+  <path d="M276 148 200 268h52l-20 96 76-120h-52l20-96Z" fill="#FFC53D"/>
+</svg>

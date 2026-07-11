@@ -1,0 +1,27 @@
+.flame {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline);
+  color: var(--text-3);
+  background: var(--surface);
+}
+
+.flame-lit {
+  color: var(--gold);
+  border-color: rgba(255, 197, 61, 0.4);
+  background: var(--gold-dim);
+}
+
+.flame-count {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.flame .micro {
+  color: inherit;
+  opacity: 0.9;
+}
