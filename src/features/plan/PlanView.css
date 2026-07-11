@@ -1,0 +1,228 @@
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-tplcard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.plan-tplhead {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  text-align: left;
+}
+
+.plan-tplhead-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.plan-tplhead-meta {
+  white-space: nowrap;
+}
+
+.plan-chevron {
+  flex-shrink: 0;
+  color: var(--text-2);
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.plan-chevron-open {
+  transform: rotate(180deg);
+}
+
+.plan-tplpreview,
+.plan-tplempty {
+  padding: 0 16px 16px;
+}
+
+.plan-tplbody {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-exlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-exrow {
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-exrow-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plan-exrow-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.plan-exrow-name {
+  font-weight: 700;
+}
+
+.plan-exrow-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.plan-iconbtn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-control);
+  color: var(--text-2);
+}
+
+.plan-iconbtn:active {
+  background: var(--hairline);
+}
+
+.plan-iconbtn:disabled {
+  opacity: 0.3;
+}
+
+.plan-iconbtn-danger {
+  color: var(--danger);
+}
+
+.plan-editrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.plan-addbtn {
+  align-self: flex-start;
+}
+
+.plan-newex {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 4px;
+}
+
+.plan-newex-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.plan-newex-row {
+  display: flex;
+  gap: 8px;
+}
+
+.plan-newex-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-libgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-liblist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plan-additem {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+  text-align: left;
+}
+
+.plan-additem:active {
+  background: var(--hairline);
+}
+
+.plan-libeditrow {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.plan-libname {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-libactions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.plan-libeditform {
+  width: 100%;
+  display: flex;
+  gap: 6px;
+}
+
+.plan-libeditform input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
