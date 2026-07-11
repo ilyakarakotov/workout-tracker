@@ -1,0 +1,123 @@
+.today-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.today-wordmark {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.today-gear {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  color: var(--text-2);
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+
+.today-gear:active {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.today-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+}
+
+.today-next {
+  border-top: 2px solid var(--hairline);
+}
+
+.today-next-push {
+  border-top-color: var(--push);
+}
+
+.today-next-pull {
+  border-top-color: var(--pull);
+}
+
+.today-next-legs {
+  border-top-color: var(--legs);
+}
+
+.today-next-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.today-next-title {
+  margin: 8px 0 6px;
+}
+
+.today-preview {
+  margin-bottom: 4px;
+}
+
+.today-last {
+  margin-bottom: 16px;
+}
+
+.today-start {
+  width: 100%;
+}
+
+.today-quickstart {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.today-quick-btn {
+  flex: 1;
+}
+
+.today-resume {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  transition: transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+
+.today-resume:active {
+  transform: scale(0.98);
+  background: var(--surface-2);
+}
+
+.today-resume-title {
+  margin-top: 4px;
+}
+
+.today-resume-timer {
+  margin: 2px 0;
+}
+
+.today-resume-cta {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.today-discard {
+  align-self: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3);
+  padding: 8px;
+}
+
+.today-discard:active {
+  color: var(--danger);
+}
