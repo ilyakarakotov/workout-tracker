@@ -6,3 +6,4 @@ dev-dist
 coverage
 TASK.md
 *.tsbuildinfo
+.playwright-cli/
