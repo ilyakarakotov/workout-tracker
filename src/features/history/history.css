@@ -1,0 +1,262 @@
+.hist-cal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hist-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hist-cal-title {
+  text-align: center;
+}
+
+.hist-cal-nav {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-control);
+  color: var(--text-2);
+  font-size: 20px;
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+
+.hist-cal-nav:active {
+  transform: scale(0.94);
+  background: var(--surface-2);
+}
+
+.hist-cal-dow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+}
+
+.hist-cal-dow span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.hist-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.hist-cal-cell {
+  min-height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: var(--r-control);
+}
+
+.hist-cal-cell-today {
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+
+.hist-cal-daynum {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.hist-cal-cell-out .hist-cal-daynum {
+  color: var(--text-3);
+  opacity: 0.5;
+}
+
+.hist-cal-dots {
+  display: flex;
+  gap: 3px;
+  min-height: 6px;
+}
+
+.hist-cal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.hist-cal-dot-push {
+  background: var(--push);
+}
+
+.hist-cal-dot-pull {
+  background: var(--pull);
+}
+
+.hist-cal-dot-legs {
+  background: var(--legs);
+}
+
+.hist-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+}
+
+.hist-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hist-legend-count {
+  margin-left: auto;
+}
+
+.hist-week-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hist-week-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hist-perfect-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--gold-dim);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hist-session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hist-session-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  text-align: left;
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+
+.hist-session-row:active {
+  transform: scale(0.99);
+  background: var(--surface-2);
+}
+
+.hist-session-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hist-session-date {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.hist-session-pr {
+  color: var(--gold);
+  font-size: 15px;
+}
+
+.hist-session-chevron {
+  color: var(--text-3);
+  font-size: 18px;
+}
+
+/* ---- session detail sheet ---- */
+
+.hist-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hist-edit-toggle {
+  margin-left: auto;
+}
+
+.hist-ex-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hist-ex-name {
+  font-weight: 700;
+}
+
+.hist-set-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hist-set-row {
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.hist-set-row-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hist-set-idx {
+  width: 16px;
+  color: var(--text-3);
+}
+
+.hist-done-toggle {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline);
+  color: var(--text-3);
+  font-weight: 700;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+
+.hist-done-toggle:active {
+  transform: scale(0.94);
+}
+
+.hist-done-toggle-on {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--on-accent);
+}
+
+.hist-delete-btn {
+  width: 100%;
+  margin-top: 8px;
+}
