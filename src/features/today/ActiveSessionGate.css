@@ -1,0 +1,378 @@
+.sess-root {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: view-in var(--t-fast) var(--ease);
+}
+
+.sess-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top) + 12px) var(--gutter) 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.sess-timer {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.sess-close {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  color: var(--text-2);
+}
+
+.sess-close:active {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.sess-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px var(--gutter) 16px;
+}
+
+.sess-empty {
+  text-align: center;
+  padding: 32px 8px;
+}
+
+.sess-exercise-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sess-exercise-name {
+  margin-bottom: 2px;
+}
+
+.sess-ex-remove {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  color: var(--text-3);
+  margin: -4px -4px 0 0;
+}
+
+.sess-ex-remove:active {
+  background: var(--surface-2);
+  color: var(--danger);
+}
+
+.sess-sets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sess-set {
+  border-radius: var(--r-control);
+  transition: background var(--t-fast) var(--ease);
+}
+
+.sess-set-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px;
+}
+
+.sess-set-idx {
+  width: 20px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-3);
+}
+
+.sess-set-values {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--r-control);
+}
+
+.sess-set-values:active {
+  background: var(--surface-2);
+}
+
+.sess-set-weight,
+.sess-set-reps {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.sess-unit {
+  margin-left: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.sess-set-x {
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.sess-check {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--hairline);
+  color: transparent;
+  transition: transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.sess-check:active {
+  transform: scale(0.92);
+}
+
+.sess-check-done {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--on-accent);
+  animation: check-pop var(--t-spring) var(--ease-spring);
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.sess-set-push.sess-set-done {
+  background: var(--push-dim);
+}
+
+.sess-set-pull.sess-set-done {
+  background: var(--pull-dim);
+}
+
+.sess-set-legs.sess-set-done {
+  background: var(--legs-dim);
+}
+
+.sess-editor {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 2px 6px 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--hairline);
+  animation: sess-editor-in var(--t-fast) var(--ease);
+}
+
+@keyframes sess-editor-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sess-remove-set {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+  padding: 8px;
+}
+
+.sess-add-set {
+  margin-top: 6px;
+  width: 100%;
+}
+
+.sess-add-exercise {
+  width: 100%;
+}
+
+.sess-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--gutter) calc(env(safe-area-inset-bottom) + 16px);
+  background: linear-gradient(to top, var(--bg) 60%, transparent);
+}
+
+.sess-finish {
+  width: 100%;
+}
+
+.sess-rest {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: view-in var(--t-fast) var(--ease);
+}
+
+.sess-rest-ring {
+  flex-shrink: 0;
+}
+
+.sess-rest-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.sess-rest-time {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sess-rest-skip {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline);
+}
+
+.sess-rest-skip:active {
+  background: var(--surface-2);
+}
+
+/* ---- add exercise sheet ---- */
+
+.sess-add-group + .sess-add-group {
+  margin-top: 4px;
+}
+
+.sess-add-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sess-add-item {
+  width: 100%;
+  text-align: left;
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 15px;
+  border-radius: var(--r-control);
+}
+
+.sess-add-item:active {
+  background: var(--surface-2);
+}
+
+/* ---- summary sheet ---- */
+
+.sess-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding-bottom: 8px;
+}
+
+.sess-summary-title {
+  margin-top: 4px;
+}
+
+.sess-summary-ring {
+  margin: 8px 0;
+}
+
+.sess-perfect {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.sess-summary-stats {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+.sess-summary-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface-2);
+  border-radius: var(--r-control);
+  padding: 12px 8px;
+}
+
+.sess-pr-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.sess-pr-badge {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-radius: var(--r-control);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.sess-summary-done {
+  width: 100%;
+  margin-top: 12px;
+}
