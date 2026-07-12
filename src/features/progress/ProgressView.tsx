@@ -42,7 +42,7 @@ export function ProgressView() {
         <StatTile label="Total sessions" value={`${sessions.length}`} />
       </div>
 
-      <PrCards prs={prs} unit={settings.unit} />
+      <PrCards prs={prs} unit={settings.unit} exercises={exercises} />
 
       <ExerciseTrend sessions={sessions} exercises={exercises} unit={settings.unit} />
 

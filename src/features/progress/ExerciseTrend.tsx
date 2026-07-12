@@ -3,6 +3,7 @@ import type { Exercise, Session, Unit } from '../../lib/types'
 import type { ExercisePoint } from '../../lib/stats'
 import { exerciseSeries, prMap } from '../../lib/stats'
 import { formatDate } from '../../lib/dates'
+import { ExerciseThumb } from '../../components/ExerciseThumb'
 import { areaPath, linePath, niceMax, scaleLinear, ticks } from './chart'
 
 const ACCENT: Record<string, string> = {
@@ -68,7 +69,15 @@ export function ExerciseTrend({ sessions, exercises, unit }: ExerciseTrendProps)
   return (
     <div className="card">
       <div className="prog-trend-head">
-        <p className="label">Exercise trend</p>
+        <span className="prog-trend-title">
+          <ExerciseThumb
+            exerciseId={active.id}
+            name={active.name}
+            dayType={exercises[active.id]?.dayType}
+            size="sm"
+          />
+          <p className="label">Exercise trend</p>
+        </span>
         <select
           className="prog-picker"
           value={active.id}

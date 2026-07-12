@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Sheet } from '../../components/Sheet'
+import { ExerciseThumb } from '../../components/ExerciseThumb'
 import { useStore } from '../../store/store'
 import { DAY_TYPE_LABEL } from '../../lib/types'
 import { groupExercisesByDayType } from './planHelpers'
@@ -69,7 +70,10 @@ export function LibrarySheet({ open, onClose }: { open: boolean; onClose: () => 
                     </form>
                   ) : (
                     <>
-                      <span className="plan-libname">{ex.name}</span>
+                      <span className="plan-libmain">
+                        <ExerciseThumb exerciseId={ex.id} name={ex.name} dayType={ex.dayType} size="sm" />
+                        <span className="plan-libname">{ex.name}</span>
+                      </span>
                       <span className="plan-libactions">
                         <button
                           type="button"

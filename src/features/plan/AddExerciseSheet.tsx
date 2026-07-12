@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sheet } from '../../components/Sheet'
 import { DayTypeBadge } from '../../components/DayTypeBadge'
+import { ExerciseThumb } from '../../components/ExerciseThumb'
 import { useStore } from '../../store/store'
 import type { DayType } from '../../lib/types'
 import { DAY_TYPE_LABEL } from '../../lib/types'
@@ -76,7 +77,10 @@ export function AddExerciseSheet({
                       className="plan-additem"
                       onClick={() => addTemplateExercise(dayType, ex.id)}
                     >
-                      <span>{ex.name}</span>
+                      <span className="plan-libmain">
+                        <ExerciseThumb exerciseId={ex.id} name={ex.name} dayType={ex.dayType} size="sm" />
+                        <span>{ex.name}</span>
+                      </span>
                       {ex.dayType ? <DayTypeBadge dayType={ex.dayType} size="sm" /> : null}
                     </button>
                   </li>

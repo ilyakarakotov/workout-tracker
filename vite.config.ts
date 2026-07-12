@@ -27,7 +27,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,gif,woff2}'],
         navigateFallback: '/workout-tracker/index.html'
       }
     })

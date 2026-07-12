@@ -204,6 +204,12 @@
   gap: 8px;
 }
 
+.hist-ex-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .hist-ex-name {
   font-weight: 700;
 }

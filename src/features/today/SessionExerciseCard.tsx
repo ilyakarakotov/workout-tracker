@@ -1,5 +1,6 @@
 import type { SessionExercise, DayType, Unit, LoggedSet } from '../../lib/types'
 import { NumberStepper } from '../../components/NumberStepper'
+import { ExerciseThumb } from '../../components/ExerciseThumb'
 import { CheckIcon, CloseIcon } from './icons'
 
 export interface EditorKey {
@@ -124,11 +125,14 @@ export function SessionExerciseCard({
   return (
     <div className="card sess-exercise">
       <div className="sess-exercise-head">
-        <div>
-          <p className="title sess-exercise-name">{ex.name}</p>
-          <p className="micro">
-            {doneCount} of {ex.sets.length} sets
-          </p>
+        <div className="sess-exercise-main">
+          <ExerciseThumb exerciseId={ex.exerciseId} name={ex.name} dayType={dayType} size="sm" />
+          <div>
+            <p className="title sess-exercise-name">{ex.name}</p>
+            <p className="micro">
+              {doneCount} of {ex.sets.length} sets
+            </p>
+          </div>
         </div>
         <button
           type="button"

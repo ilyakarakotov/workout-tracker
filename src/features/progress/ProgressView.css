@@ -36,7 +36,7 @@
 
 .prog-pr-card {
   flex: 0 0 auto;
-  width: 148px;
+  width: 184px;
   scroll-snap-align: start;
 }
 
@@ -80,6 +80,13 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 8px;
+}
+
+.prog-trend-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .prog-picker {

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Sheet } from '../../components/Sheet'
+import { ExerciseThumb } from '../../components/ExerciseThumb'
 import { DAY_TYPES, DAY_TYPE_LABEL, type Exercise } from '../../lib/types'
 
 const GROUPS = [...DAY_TYPES, 'other'] as const
@@ -47,7 +48,8 @@ export function AddExerciseSheet({
                         className="sess-add-item"
                         onClick={() => onAdd(ex.id)}
                       >
-                        {ex.name}
+                        <ExerciseThumb exerciseId={ex.id} name={ex.name} dayType={ex.dayType} size="sm" />
+                        <span>{ex.name}</span>
                       </button>
                     </li>
                   ))}

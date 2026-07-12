@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sheet } from '../../components/Sheet'
 import { DayTypeBadge } from '../../components/DayTypeBadge'
+import { ExerciseThumb } from '../../components/ExerciseThumb'
 import { NumberStepper } from '../../components/NumberStepper'
 import { useStore } from '../../store/store'
 import type { Session } from '../../lib/types'
@@ -87,7 +88,10 @@ export function SessionDetailSheet({
 
       {session.exercises.map((ex, exIndex) => (
         <div key={`${ex.exerciseId}-${exIndex}`} className="hist-ex-block">
-          <p className="hist-ex-name">{ex.name}</p>
+          <div className="hist-ex-head">
+            <ExerciseThumb exerciseId={ex.exerciseId} name={ex.name} dayType={session.dayType} size="sm" />
+            <p className="hist-ex-name">{ex.name}</p>
+          </div>
           <ul className="hist-set-list">
             {ex.sets.map((set, setIndex) =>
               editing ? (

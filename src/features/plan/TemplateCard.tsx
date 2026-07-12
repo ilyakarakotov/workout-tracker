@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../../store/store'
 import { DayTypeBadge } from '../../components/DayTypeBadge'
+import { ExerciseThumb } from '../../components/ExerciseThumb'
 import { NumberStepper } from '../../components/NumberStepper'
 import type { DayType, TemplateExercise } from '../../lib/types'
 import { DAY_TYPE_LABEL } from '../../lib/types'
@@ -26,6 +27,7 @@ function ExerciseRow({
   isFirst: boolean
   isLast: boolean
 }) {
+  const exerciseId = te.exerciseId
   const moveTemplateExercise = useStore((s) => s.moveTemplateExercise)
   const removeTemplateExercise = useStore((s) => s.removeTemplateExercise)
   const updateTemplateSet = useStore((s) => s.updateTemplateSet)
@@ -54,9 +56,12 @@ function ExerciseRow({
   return (
     <li className="plan-exrow card">
       <div className="plan-exrow-head">
-        <span className="plan-exrow-title">
-          <span className="plan-exrow-name">{name}</span>
-          <span className="micro">{formatSetSummary(te.sets, unit)}</span>
+        <span className="plan-exrow-main">
+          <ExerciseThumb exerciseId={exerciseId} name={name} dayType={dayType} size="sm" />
+          <span className="plan-exrow-title">
+            <span className="plan-exrow-name">{name}</span>
+            <span className="micro">{formatSetSummary(te.sets, unit)}</span>
+          </span>
         </span>
         <span className="plan-exrow-actions">
           <button

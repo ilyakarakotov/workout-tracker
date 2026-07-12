@@ -61,6 +61,13 @@
   margin-bottom: 10px;
 }
 
+.sess-exercise-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .sess-exercise-name {
   margin-bottom: 2px;
 }
@@ -298,6 +305,9 @@
 
 .sess-add-item {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-align: left;
   min-height: 44px;
   padding: 0 4px;

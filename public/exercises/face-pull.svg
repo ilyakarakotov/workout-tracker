@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <title>Face pull exercise diagram</title>
+  <desc>Original line-art diagram: a figure standing side-on, pulling a rope cable attachment from a high pulley toward the face, elbows flared out.</desc>
+  <rect x="0" y="0" width="200" height="300" fill="#ffffff" />
+  <g fill="none" stroke="#1a1a1a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- cable machine post -->
+    <line x1="150" y1="20" x2="150" y2="280" />
+    <line x1="140" y1="20" x2="160" y2="20" />
+    <!-- high pulley -->
+    <circle cx="150" cy="40" r="6" fill="#1a1a1a" stroke="none" />
+    <!-- cable from pulley down to hands -->
+    <path d="M150 46 C 150 90, 118 96, 100 108" />
+    <!-- rope attachment -->
+    <line x1="92" y1="100" x2="108" y2="116" />
+    <!-- head -->
+    <circle cx="70" cy="60" r="16" />
+    <!-- torso, slight lean back -->
+    <path d="M70 76 C 74 100, 80 130, 86 158" />
+    <!-- rear leg -->
+    <path d="M86 158 C 82 190, 78 220, 74 252" />
+    <path d="M74 252 L 60 268" />
+    <path d="M74 252 L 86 268" />
+    <!-- front leg, staggered stance -->
+    <path d="M86 158 C 96 188, 100 220, 96 252" />
+    <path d="M96 252 L 84 268" />
+    <path d="M96 252 L 108 268" />
+    <!-- upper arm to elbow, flared high -->
+    <path d="M78 92 C 90 84, 100 84, 108 92" />
+    <!-- forearm from elbow to hands at face -->
+    <path d="M108 92 C 100 98, 92 102, 84 106" />
+    <path d="M78 92 C 68 100, 62 106, 58 112" />
+    <path d="M58 112 C 66 106, 74 102, 84 106" />
+  </g>
+</svg>

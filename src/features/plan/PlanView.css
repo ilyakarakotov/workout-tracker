@@ -76,6 +76,13 @@
   gap: 8px;
 }
 
+.plan-exrow-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .plan-exrow-title {
   display: flex;
   flex-direction: column;
@@ -189,6 +196,14 @@
   justify-content: space-between;
   gap: 8px;
   padding: 0 4px;
+}
+
+.plan-libmain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
 }
 
 .plan-libname {

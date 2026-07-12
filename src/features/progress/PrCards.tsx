@@ -1,14 +1,16 @@
 import type { ExercisePR } from '../../lib/stats'
-import type { Unit } from '../../lib/types'
+import type { Exercise, Unit } from '../../lib/types'
 import { formatDate } from '../../lib/dates'
+import { ExerciseThumb } from '../../components/ExerciseThumb'
 
 export interface PrCardsProps {
   prs: ExercisePR[]
   unit: Unit
+  exercises: Record<string, Exercise>
 }
 
 /** Horizontal-scroll row of PR cards, top exercises by best e1RM. */
-export function PrCards({ prs, unit }: PrCardsProps) {
+export function PrCards({ prs, unit, exercises }: PrCardsProps) {
   if (prs.length === 0) {
     return (
       <div className="card">
@@ -27,6 +29,12 @@ export function PrCards({ prs, unit }: PrCardsProps) {
         {prs.map((pr) => (
           <div className="card prog-pr-card" key={pr.exerciseId}>
             <div className="prog-pr-head">
+              <ExerciseThumb
+                exerciseId={pr.exerciseId}
+                name={pr.name}
+                dayType={exercises[pr.exerciseId]?.dayType}
+                size="sm"
+              />
               <span className="prog-pr-star" aria-hidden="true">
                 ★
               </span>
