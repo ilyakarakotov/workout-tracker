@@ -28,6 +28,7 @@ function parseFieldInput(raw: string): number | null | undefined {
 interface SetRowProps {
   exIdx: number
   setIdx: number
+  exerciseName: string
   set: LoggedSet
   dayType: DayType
   unit: Unit
@@ -60,6 +61,7 @@ function useGhostField(touched: boolean | undefined, value: number) {
 function SetRow({
   exIdx,
   setIdx,
+  exerciseName,
   set,
   dayType,
   unit,
@@ -95,6 +97,8 @@ function SetRow({
     setRepsText(set.repsTouched ? formatNum(set.reps) : '')
   }
 
+  const status = set.done ? ', logged' : ', not logged'
+
   return (
     <li className={`sess-set sess-set-${dayType}${set.done ? ' sess-set-done' : ''}`}>
       <span className="sess-set-idx num">{setIdx + 1}</span>
@@ -105,7 +109,7 @@ function SetRow({
         type="text"
         inputMode="decimal"
         className="sess-set-input num"
-        aria-label={`Set ${setIdx + 1} weight (${unit})`}
+        aria-label={`${exerciseName} set ${setIdx + 1} weight (${unit})${status}`}
         placeholder={ghostWeight}
         value={weightText}
         onChange={(e) => handleWeightChange(e.target.value)}
@@ -118,7 +122,7 @@ function SetRow({
         type="text"
         inputMode="numeric"
         className="sess-set-input num"
-        aria-label={`Set ${setIdx + 1} reps`}
+        aria-label={`${exerciseName} set ${setIdx + 1} reps${status}`}
         placeholder={ghostReps}
         value={repsText}
         onChange={(e) => handleRepsChange(e.target.value)}
@@ -127,7 +131,7 @@ function SetRow({
       <button
         type="button"
         className="sess-set-remove"
-        aria-label={`Remove set ${setIdx + 1}`}
+        aria-label={`Remove ${exerciseName} set ${setIdx + 1}`}
         onClick={() => onRemove(exIdx, setIdx)}
       >
         <CloseIcon />
@@ -187,6 +191,7 @@ export function SessionExerciseCard({
             key={setIdx}
             exIdx={exIdx}
             setIdx={setIdx}
+            exerciseName={ex.name}
             set={set}
             dayType={dayType}
             unit={unit}
