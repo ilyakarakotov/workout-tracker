@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useStore, STORAGE_KEY, migrateLegacyStorage } from './store'
 import { selectNextDayType } from './selectors'
 
@@ -153,6 +153,28 @@ describe('store', () => {
     expect(s.reps).toBe(9)
   })
 
+  it('removeSetFromActive re-indexes remaining sets without corrupting their data', () => {
+    useStore.getState().startSession('push')
+    useStore.getState().enterActiveWeight(0, 0, 11)
+    useStore.getState().enterActiveWeight(0, 1, 22)
+    useStore.getState().enterActiveWeight(0, 2, 33)
+
+    useStore.getState().removeSetFromActive(0, 0) // drop the first set
+    const sets = useStore.getState().activeSession!.exercises[0].sets
+    // old index 1 (weight 22) is now index 0; old index 2 (weight 33) is now index 1
+    expect(sets[0].weight).toBe(22)
+    expect(sets[1].weight).toBe(33)
+  })
+
+  it('enterActiveWeight/enterActiveReps on an out-of-range index is a safe no-op', () => {
+    useStore.getState().startSession('push')
+    const before = useStore.getState().activeSession
+    useStore.getState().enterActiveWeight(0, 999, 50)
+    useStore.getState().enterActiveReps(999, 0, 5)
+    const after = useStore.getState().activeSession
+    expect(after!.exercises[0].sets).toEqual(before!.exercises[0].sets)
+  })
+
   it('addSetToActive gives the new row ghost fields from the previous row', () => {
     useStore.getState().startSession('push')
     useStore.getState().addSetToActive(0)
@@ -232,5 +254,75 @@ describe('storage key migration', () => {
   it('is a no-op when neither key exists', () => {
     migrateLegacyStorage()
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+})
+
+describe('resuming a pre-migration, old-shape active session from storage', () => {
+  const LEGACY_KEY = 'forge.v1'
+
+  beforeEach(() => {
+    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(LEGACY_KEY)
+  })
+
+  it('rehydrates an in-progress forge.v1 session (old LoggedSet shape, no ghost/touched fields) without crashing, and it can still be logged and finished', async () => {
+    // Shape written by the pre-rename, pre-rework app: no weightTouched /
+    // repsTouched / ghostWeight / ghostReps on any set, and the old storage
+    // key.
+    const legacyPersisted = {
+      state: {
+        exercises: { 'bench-press': { id: 'bench-press', name: 'Bench Press', dayType: 'push' } },
+        templates: {
+          push: { dayType: 'push', exercises: [{ exerciseId: 'bench-press', sets: [{ reps: 8, weight: 60 }] }] },
+          pull: { dayType: 'pull', exercises: [] },
+          legs: { dayType: 'legs', exercises: [] },
+        },
+        sessions: [],
+        activeSession: {
+          id: 'old-session',
+          dayType: 'push',
+          startedAt: 1000,
+          exercises: [
+            {
+              exerciseId: 'bench-press',
+              name: 'Bench Press',
+              // one already-logged set (old shape) and one still-open set
+              sets: [
+                { weight: 60, reps: 8, done: true },
+                { weight: 60, reps: 8, done: false },
+              ],
+            },
+          ],
+        },
+        settings: { unit: 'kg', weekStartsOn: 1, weeklyGoal: 6, restSeconds: 90 },
+      },
+      version: 0,
+    }
+    localStorage.setItem(LEGACY_KEY, JSON.stringify(legacyPersisted))
+
+    vi.resetModules()
+    const fresh = await import('./store')
+
+    // migration + zustand persist hydration both resolve synchronously off
+    // localStorage.getItem, so this is already hydrated by the time the
+    // module finishes evaluating.
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(legacyPersisted))
+    const active = fresh.useStore.getState().activeSession
+    expect(active).not.toBeNull()
+    expect(active!.exercises[0].sets).toHaveLength(2)
+    expect(active!.exercises[0].sets[0].done).toBe(true)
+
+    // interacting with the resumed old-shape sets must not throw, and
+    // ghost fallback (ghostReps ?? reps) keeps clearing/re-logging sane
+    fresh.useStore.getState().enterActiveReps(0, 1, 10)
+    expect(fresh.useStore.getState().activeSession!.exercises[0].sets[1].done).toBe(true)
+    fresh.useStore.getState().enterActiveReps(0, 1, null)
+    expect(fresh.useStore.getState().activeSession!.exercises[0].sets[1].done).toBe(false)
+    expect(fresh.useStore.getState().activeSession!.exercises[0].sets[1].reps).toBe(10) // no ghost recorded -> falls back to current value, not lost
+
+    const id = fresh.useStore.getState().finishSession()
+    expect(id).toBe('old-session')
+    const finished = fresh.useStore.getState().sessions[0]
+    expect(finished.exercises[0].sets[0]).toEqual({ weight: 60, reps: 8, done: true })
   })
 })
