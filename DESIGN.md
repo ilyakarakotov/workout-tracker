@@ -1,4 +1,4 @@
-# Forge — Design System
+# Workout — Design System
 
 Dark-only v1. The mood: a quiet gym at night — near-black surfaces, iron greys, and one hot ember of color per day type. Numbers are the typography heroes (big, heavy, tabular). Motion is snappy and physical.
 
@@ -61,4 +61,4 @@ Short, lowercase-calm, zero exclamation inflation. "Push day. Let's go." / "6 of
 
 ## Icon / brand
 
-Wordmark "FORGE" 800 weight, tracking .08em. App icon: rounded-square `#0B0C0F` bg, gold ember arc (partial ring) + coral spark — see `public/icon.svg` (masters for 192/512/maskable/apple-touch PNGs).
+Wordmark "WORKOUT" 800 weight, tracking .08em. App icon: rounded-square `#0B0C0F` bg, gold ember arc (partial ring) + coral spark — see `public/icon.svg` (masters for 192/512/maskable/apple-touch PNGs).

@@ -28,7 +28,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
     const a = document.createElement('a')
     const date = new Date().toISOString().slice(0, 10)
     a.href = url
-    a.download = `forge-export-${date}.json`
+    a.download = `workout-export-${date}.json`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -132,7 +132,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
         </button>
       </section>
 
-      <p className="micro settings-footer">Forge v1 — your data never leaves this device.</p>
+      <p className="micro settings-footer">Workout v1 — your data never leaves this device.</p>
     </Sheet>
   )
 }

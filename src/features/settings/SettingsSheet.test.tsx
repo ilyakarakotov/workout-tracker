@@ -20,7 +20,7 @@ describe('SettingsSheet', () => {
     expect(screen.getByText('6 sessions — Push, Pull, Legs, twice each')).toBeInTheDocument()
     expect(screen.getByText('Rest timer')).toBeInTheDocument()
     expect(screen.getByText('Export JSON')).toBeInTheDocument()
-    expect(screen.getByText('Forge v1 — your data never leaves this device.')).toBeInTheDocument()
+    expect(screen.getByText('Workout v1 — your data never leaves this device.')).toBeInTheDocument()
   })
 
   it('renders nothing when closed', () => {

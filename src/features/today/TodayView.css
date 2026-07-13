@@ -25,12 +25,98 @@
   color: var(--text);
 }
 
-.today-hero {
+.today-heat-head {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 8px 0 4px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.today-heat-month {
+  margin: 0;
+}
+
+.today-heat-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+
+.today-heat-weekday {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.today-heat-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.today-heat-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: today-heat-in var(--t-spring) var(--ease-spring) backwards;
+}
+
+.today-heat-cell-pad {
+  visibility: hidden;
+  animation: none;
+}
+
+.today-heat-level-1 {
+  background: rgba(61, 214, 140, 0.38);
+}
+
+.today-heat-level-2 {
+  background: var(--ok);
+}
+
+.today-heat-cell-future {
+  background: transparent;
+  border: 1px dashed var(--hairline);
+}
+
+.today-heat-cell-today {
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+
+.today-heat-daynum {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.today-heat-level-1 .today-heat-daynum {
+  color: var(--text);
+}
+
+.today-heat-level-2 .today-heat-daynum {
+  color: var(--on-accent);
+}
+
+.today-heat-footer {
+  margin-top: 10px;
+}
+
+@keyframes today-heat-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .today-next {

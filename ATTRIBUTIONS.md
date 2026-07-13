@@ -19,7 +19,7 @@ Mapping from exercise id to file lives in `src/lib/exerciseImages.ts`.
 | Deadlift | `deadlift.jpg` | [File:Deadlift_Barbell.JPG](https://commons.wikimedia.org/wiki/File:Deadlift_Barbell.JPG) | CC BY-SA 2.0 | stu_spivack / Stuart Spivack (via Flickr) |
 | Pull-Up | `pull-up.jpg` | [File:Girl_doing_pull_up_top_position.jpg](https://commons.wikimedia.org/wiki/File:Girl_doing_pull_up_top_position.jpg) | CC BY 2.0 | PTPioneer (Tyler Read), ptpioneer.com |
 | Barbell Row | `barbell-row.jpg` | [File:Barbell_row.jpg](https://commons.wikimedia.org/wiki/File:Barbell_row.jpg) | CC BY 2.0 | embhoo (via Flickr) |
-| Face Pull | `face-pull.svg` | — original artwork — | Original work for this project | Created for Forge; not sourced from Commons (see note) |
+| Face Pull | `face-pull.svg` | — original artwork — | Original work for this project | Created for Workout; not sourced from Commons (see note) |
 | Barbell Curl | `barbell-curl.png` | [File:Wide_grip_standing_biceps_curl_with_barbell_2.svg](https://commons.wikimedia.org/wiki/File:Wide_grip_standing_biceps_curl_with_barbell_2.svg) | CC BY-SA 3.0 | Everkinetic |
 | Hammer Curl | `hammer-curl.png` | [File:Bicep_hammer_curl_with_dumbbell_1.svg](https://commons.wikimedia.org/wiki/File:Bicep_hammer_curl_with_dumbbell_1.svg) | CC BY-SA 3.0 | Everkinetic |
 | Squat | `squat.jpg` | [File:Woman_doing_squat_workout_in_gym_with_barbell,_back_view.jpg](<https://commons.wikimedia.org/wiki/File:Woman_doing_squat_workout_in_gym_with_barbell,_back_view.jpg>) | CC BY 2.0 | Nenad Stojkovic (via Flickr) |
