@@ -30,7 +30,9 @@ export function TodayView() {
   const streak = selectStreak({ sessions, settings })
   const lastSession = selectLastSessionOf({ sessions }, next)
 
-  const now = useMemo(() => Date.now(), [])
+  // minute ticker so the heatmap rolls over correctly if the tab stays
+  // mounted across a day/month boundary
+  const now = useTicker(true, 60_000)
   const heat = useMemo(() => {
     const d = new Date(now)
     return monthHeatCells(d.getFullYear(), d.getMonth(), settings.weekStartsOn, sessions, now)

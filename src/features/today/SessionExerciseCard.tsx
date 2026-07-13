@@ -69,8 +69,11 @@ function SetRow({
   onCommitReps,
   onRemove,
 }: SetRowProps) {
-  const [weightText, setWeightText] = useGhostField(set.weightTouched, set.weight)
-  const [repsText, setRepsText] = useGhostField(set.repsTouched, set.reps)
+  // a done set always shows its real values solid, even when the touched
+  // flags are absent (sets logged before the flags existed, or logged via
+  // reps-only entry where the weight fell back to the ghost)
+  const [weightText, setWeightText] = useGhostField(set.weightTouched ?? set.done, set.weight)
+  const [repsText, setRepsText] = useGhostField(set.repsTouched ?? set.done, set.reps)
 
   const ghostWeight = formatNum(set.ghostWeight ?? set.weight)
   const ghostReps = formatNum(set.ghostReps ?? set.reps)
@@ -83,7 +86,7 @@ function SetRow({
   }
 
   function handleWeightBlur() {
-    setWeightText(set.weightTouched ? formatNum(set.weight) : '')
+    setWeightText((set.weightTouched ?? set.done) ? formatNum(set.weight) : '')
   }
 
   function handleRepsChange(raw: string) {
@@ -94,7 +97,7 @@ function SetRow({
   }
 
   function handleRepsBlur() {
-    setRepsText(set.repsTouched ? formatNum(set.reps) : '')
+    setRepsText((set.repsTouched ?? set.done) ? formatNum(set.reps) : '')
   }
 
   const status = set.done ? ', logged' : ', not logged'

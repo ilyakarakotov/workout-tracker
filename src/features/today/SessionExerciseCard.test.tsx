@@ -66,6 +66,30 @@ describe('SessionExerciseCard — set-row a11y and ghost-field behavior', () => 
     expect(useStore.getState().activeSession!.exercises[0].sets[0].weight).toBe(60)
   })
 
+  it('renders done sets from pre-migration data (no touched flags) with solid values, not ghosts', () => {
+    useStore.getState().startSession('push')
+    // simulate a resumed active session persisted before the touched/ghost
+    // fields existed: done is true but no helper flags are present
+    useStore.setState((st) => ({
+      activeSession: {
+        ...st.activeSession!,
+        exercises: st.activeSession!.exercises.map((ex, i) =>
+          i !== 0
+            ? ex
+            : { ...ex, sets: ex.sets.map((s, j) => (j !== 0 ? s : { weight: 60, reps: 8, done: true })) },
+        ),
+      },
+    }))
+    render(<ActiveSessionGate />)
+
+    const weightField = screen.getByLabelText(
+      'Bench Press set 1 weight (kg), logged',
+    ) as HTMLInputElement
+    const repsField = screen.getByLabelText('Bench Press set 1 reps, logged') as HTMLInputElement
+    expect(weightField.value).toBe('60')
+    expect(repsField.value).toBe('8')
+  })
+
   it('removing an earlier set does not corrupt an already-committed value in a later row (index re-sync)', () => {
     useStore.getState().startSession('push')
     render(<ActiveSessionGate />)
