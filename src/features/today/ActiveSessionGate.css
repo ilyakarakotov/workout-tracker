@@ -46,7 +46,9 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px var(--gutter) calc(env(safe-area-inset-bottom) + 24px);
+  /* bottom padding clears the floating rest pill so the finish button stays
+   * tappable at full scroll */
+  padding: 16px var(--gutter) calc(env(safe-area-inset-bottom) + 96px);
 }
 
 .sess-empty {
