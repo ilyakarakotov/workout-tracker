@@ -1,6 +1,6 @@
-# Forge — Product Spec
+# Workout — Product Spec
 
-**Forge** is a mobile-first, offline, installable PWA for lifters running a **Push / Pull / Legs split performed twice weekly** (6 sessions/week). Local-only persistence, no accounts, no backend. Deployed publicly on GitHub Pages.
+**Workout** is a mobile-first, offline, installable PWA for lifters running a **Push / Pull / Legs split performed twice weekly** (6 sessions/week). Local-only persistence, no accounts, no backend. Deployed publicly on GitHub Pages.
 
 Tagline: *Push. Pull. Legs. Twice.*
 

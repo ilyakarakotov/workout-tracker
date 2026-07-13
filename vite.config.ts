@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Forge — PPL Workout Tracker',
-        short_name: 'Forge',
+        name: 'Workout',
+        short_name: 'Workout',
         description: 'Push / Pull / Legs, twice a week. Log lifts, chase PRs, keep the streak.',
         theme_color: '#0B0C0F',
         background_color: '#0B0C0F',
