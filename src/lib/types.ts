@@ -36,6 +36,13 @@ export interface LoggedSet {
   weight: number
   reps: number
   done: boolean
+  /** active-session only: true once the user explicitly entered the value this session */
+  weightTouched?: boolean
+  repsTouched?: boolean
+  /** active-session only: the prefilled "ghost" value captured at prefill time, used to
+   * restore weight/reps when the user clears their entry */
+  ghostWeight?: number
+  ghostReps?: number
 }
 
 export interface SessionExercise {

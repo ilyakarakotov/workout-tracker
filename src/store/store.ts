@@ -13,7 +13,27 @@ import { DAY_TYPES } from '../lib/types'
 import { newId } from '../lib/id'
 import { seedExercises, seedTemplates } from './seed'
 
-export const STORAGE_KEY = 'forge.v1'
+export const STORAGE_KEY = 'workout.v1'
+const LEGACY_STORAGE_KEY = 'forge.v1'
+
+/**
+ * One-time migration: if the new storage key has nothing yet but the old
+ * `forge.v1` key does, copy it over so existing installs keep their data.
+ * The old key is left in place (harmless, and safe if this runs twice).
+ * Wrapped defensively for SSR/jsdom environments without `localStorage`.
+ */
+export function migrateLegacyStorage(): void {
+  try {
+    if (typeof localStorage === 'undefined') return
+    if (localStorage.getItem(STORAGE_KEY) != null) return
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY)
+    if (legacy != null) localStorage.setItem(STORAGE_KEY, legacy)
+  } catch {
+    /* storage unavailable — nothing to migrate */
+  }
+}
+
+migrateLegacyStorage()
 
 export const DEFAULT_SETTINGS: Settings = {
   unit: 'kg',
@@ -29,8 +49,11 @@ export interface AppState extends PersistedData {
   finishSession: () => string | null
 
   /* ---- active session editing ---- */
-  updateActiveSet: (exIndex: number, setIndex: number, patch: Partial<LoggedSet>) => void
-  toggleSetDone: (exIndex: number, setIndex: number) => void
+  /** number → sets weight, marks it touched. null (cleared field) → reverts to the ghost value. */
+  enterActiveWeight: (exIndex: number, setIndex: number, weight: number | null) => void
+  /** number → sets reps, marks it touched, and logs the set (done: true).
+   * null (cleared field) → unlogs the set and reverts reps to the ghost value. */
+  enterActiveReps: (exIndex: number, setIndex: number, reps: number | null) => void
   addSetToActive: (exIndex: number) => void
   removeSetFromActive: (exIndex: number, setIndex: number) => void
   addExerciseToActive: (exerciseId: string) => void
@@ -82,10 +105,22 @@ function prefillSets(
       const done = ex.sets.filter((s) => s.done)
       const src = done.length > 0 ? done : ex.sets
       if (src.length > 0)
-        return src.map((s) => ({ weight: s.weight, reps: s.reps, done: false }))
+        return src.map((s) => ({
+          weight: s.weight,
+          reps: s.reps,
+          done: false,
+          ghostWeight: s.weight,
+          ghostReps: s.reps,
+        }))
     }
   }
-  return fallback.map((t) => ({ weight: t.weight, reps: t.reps, done: false }))
+  return fallback.map((t) => ({
+    weight: t.weight,
+    reps: t.reps,
+    done: false,
+    ghostWeight: t.weight,
+    ghostReps: t.reps,
+  }))
 }
 
 export const useStore = create<AppState>()(
@@ -122,7 +157,12 @@ export const useStore = create<AppState>()(
       finishSession: () => {
         const { activeSession, sessions } = get()
         if (!activeSession) return null
-        const done: Session = { ...activeSession, endedAt: Date.now() }
+        // strip active-session-only helper fields so persisted history stays clean
+        const cleanExercises = activeSession.exercises.map((ex) => ({
+          ...ex,
+          sets: ex.sets.map(({ weight, reps, done }) => ({ weight, reps, done })),
+        }))
+        const done: Session = { ...activeSession, exercises: cleanExercises, endedAt: Date.now() }
         set({
           activeSession: null,
           sessions: [...sessions, done].sort((a, b) => a.startedAt - b.startedAt),
@@ -130,7 +170,7 @@ export const useStore = create<AppState>()(
         return done.id
       },
 
-      updateActiveSet: (exIndex, setIndex, patch) =>
+      enterActiveWeight: (exIndex, setIndex, weight) =>
         set((st) => {
           if (!st.activeSession) return st
           const exercises = st.activeSession.exercises.map((ex, i) =>
@@ -138,28 +178,19 @@ export const useStore = create<AppState>()(
               ? ex
               : {
                   ...ex,
-                  sets: ex.sets.map((s, j) =>
-                    j !== setIndex
-                      ? s
-                      : {
-                          ...s,
-                          ...patch,
-                          weight:
-                            patch.weight !== undefined
-                              ? clampNum(patch.weight, 0, 2000)
-                              : s.weight,
-                          reps:
-                            patch.reps !== undefined
-                              ? Math.round(clampNum(patch.reps, 0, 999))
-                              : s.reps,
-                        },
-                  ),
+                  sets: ex.sets.map((s, j) => {
+                    if (j !== setIndex) return s
+                    if (weight === null) {
+                      return { ...s, weightTouched: false, weight: s.ghostWeight ?? s.weight }
+                    }
+                    return { ...s, weight: clampNum(weight, 0, 2000), weightTouched: true }
+                  }),
                 },
           )
           return { activeSession: { ...st.activeSession, exercises } }
         }),
 
-      toggleSetDone: (exIndex, setIndex) =>
+      enterActiveReps: (exIndex, setIndex, reps) =>
         set((st) => {
           if (!st.activeSession) return st
           const exercises = st.activeSession.exercises.map((ex, i) =>
@@ -167,7 +198,23 @@ export const useStore = create<AppState>()(
               ? ex
               : {
                   ...ex,
-                  sets: ex.sets.map((s, j) => (j !== setIndex ? s : { ...s, done: !s.done })),
+                  sets: ex.sets.map((s, j) => {
+                    if (j !== setIndex) return s
+                    if (reps === null) {
+                      return {
+                        ...s,
+                        repsTouched: false,
+                        done: false,
+                        reps: s.ghostReps ?? s.reps,
+                      }
+                    }
+                    return {
+                      ...s,
+                      reps: Math.round(clampNum(reps, 0, 999)),
+                      repsTouched: true,
+                      done: true,
+                    }
+                  }),
                 },
           )
           return { activeSession: { ...st.activeSession, exercises } }
@@ -180,8 +227,14 @@ export const useStore = create<AppState>()(
             if (i !== exIndex) return ex
             const last = ex.sets[ex.sets.length - 1]
             const blank: LoggedSet = last
-              ? { weight: last.weight, reps: last.reps, done: false }
-              : { weight: 0, reps: 8, done: false }
+              ? {
+                  weight: last.weight,
+                  reps: last.reps,
+                  done: false,
+                  ghostWeight: last.weight,
+                  ghostReps: last.reps,
+                }
+              : { weight: 0, reps: 8, done: false, ghostWeight: 0, ghostReps: 8 }
             return { ...ex, sets: [...ex.sets, blank] }
           })
           return { activeSession: { ...st.activeSession, exercises } }
@@ -365,7 +418,7 @@ export const useStore = create<AppState>()(
       exportData: () => {
         const { exercises, templates, sessions, activeSession, settings } = get()
         const data: PersistedData & { app: string; exportedAt: number } = {
-          app: 'forge/v1',
+          app: 'workout/v1',
           exportedAt: Date.now(),
           exercises,
           templates,
@@ -389,7 +442,7 @@ export const useStore = create<AppState>()(
             !data.templates.pull ||
             !data.templates.legs
           ) {
-            return { ok: false as const, error: 'Not a valid Forge export file.' }
+            return { ok: false as const, error: 'Not a valid Workout export file.' }
           }
           set({
             exercises: data.exercises,
