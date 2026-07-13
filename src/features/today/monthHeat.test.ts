@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { monthHeatCells, weekdayInitials } from './monthHeat'
 
+// no @types/node in this project; declare just enough of the Node global to
+// temporarily flip the test-runner's timezone for the DST test below.
+declare const process: { env: Record<string, string | undefined> }
+
 function sessionAt(y: number, m: number, d: number, h = 9): { startedAt: number } {
   return { startedAt: new Date(y, m, d, h).getTime() }
 }
@@ -98,5 +102,57 @@ describe('weekdayInitials', () => {
 
   it('orders labels starting Sunday when weekStartsOn = 0', () => {
     expect(weekdayInitials(0)).toEqual(['S', 'M', 'T', 'W', 'T', 'F', 'S'])
+  })
+})
+
+describe('monthHeatCells — day-boundary and DST edge cases', () => {
+  it('a session at 23:59:59 counts toward that calendar day, not the next', () => {
+    const lastMinuteOfMonth = { startedAt: new Date(2026, 6, 31, 23, 59, 59).getTime() }
+    const { cells, workoutDays } = monthHeatCells(2026, 6, 1, [lastMinuteOfMonth])
+    const byKey = new Map(cells.map((c) => [c.key, c]))
+    expect(byKey.get('2026-07-31')?.level).toBe(1)
+    expect(workoutDays).toBe(1)
+  })
+
+  it('a session at 00:00:00 on the 1st counts toward the new month, not the last day of the previous one', () => {
+    const midnightFirst = { startedAt: new Date(2026, 6, 1, 0, 0, 0).getTime() }
+    const july = monthHeatCells(2026, 6, 1, [midnightFirst])
+    const june = monthHeatCells(2026, 5, 1, [midnightFirst])
+    expect(july.workoutDays).toBe(1)
+    expect(june.workoutDays).toBe(0)
+  })
+
+  it('"today" at 23:59:59 is still flagged isToday, not isFuture', () => {
+    const now = new Date(2026, 6, 13, 23, 59, 59).getTime()
+    const { cells } = monthHeatCells(2026, 6, 1, [], now)
+    const byKey = new Map(cells.map((c) => [c.key, c]))
+    expect(byKey.get('2026-07-13')?.isToday).toBe(true)
+    expect(byKey.get('2026-07-13')?.isFuture).toBe(false)
+    expect(byKey.get('2026-07-14')?.isFuture).toBe(true)
+  })
+
+  it('grid stays week-aligned and undistorted across a spring-forward DST transition (US Eastern, Mar 8 2026)', () => {
+    const originalTZ = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    try {
+      // March 2026: 1st is a Sunday, DST starts Sun Mar 8 (clocks skip 2am->3am).
+      const sessionBeforeDst = { startedAt: new Date(2026, 2, 8, 1, 30).getTime() }
+      const sessionAfterDst = { startedAt: new Date(2026, 2, 9, 1, 30).getTime() }
+      const { cells, workoutDays } = monthHeatCells(2026, 2, 0, [
+        sessionBeforeDst,
+        sessionAfterDst,
+      ])
+      // full weeks, no duplicated/missing day from the DST jump
+      expect(cells.length % 7).toBe(0)
+      expect(cells.filter((c) => c.inMonth)).toHaveLength(31)
+      const keys = cells.map((c) => c.key)
+      expect(new Set(keys).size).toBe(keys.length) // no duplicate day keys
+      const byKey = new Map(cells.map((c) => [c.key, c]))
+      expect(byKey.get('2026-03-08')?.level).toBe(1)
+      expect(byKey.get('2026-03-09')?.level).toBe(1)
+      expect(workoutDays).toBe(2)
+    } finally {
+      process.env.TZ = originalTZ
+    }
   })
 })

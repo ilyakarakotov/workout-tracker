@@ -57,6 +57,13 @@
   gap: 4px;
 }
 
+/* role="row" wrapper for the ARIA grid pattern (gridcells must be owned by a
+ * row); display:contents keeps it out of the visual box tree so the cells
+ * still lay out directly on the CSS grid above. */
+.today-heat-row {
+  display: contents;
+}
+
 .today-heat-cell {
   position: relative;
   aspect-ratio: 1;
