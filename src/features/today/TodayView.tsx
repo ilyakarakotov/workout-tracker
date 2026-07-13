@@ -37,6 +37,11 @@ export function TodayView() {
   }, [now, settings.weekStartsOn, sessions])
   const weekdayLabels = useMemo(() => weekdayInitials(settings.weekStartsOn), [settings.weekStartsOn])
   const heatAriaLabel = `${heat.monthLabel} activity, ${heat.workoutDays} workout day${heat.workoutDays === 1 ? '' : 's'}`
+  const heatWeeks = useMemo(() => {
+    const weeks: (typeof heat.cells)[] = []
+    for (let i = 0; i < heat.cells.length; i += 7) weeks.push(heat.cells.slice(i, i + 7))
+    return weeks
+  }, [heat.cells])
   const workoutsThisMonth = useMemo(() => {
     const d = new Date(now)
     return sessions.filter((s) => {
@@ -87,28 +92,35 @@ export function TodayView() {
           ))}
         </div>
         <div className="today-heat-grid" role="grid" aria-label={heatAriaLabel}>
-          {heat.cells.map((cell, i) => (
-            <div
-              key={cell.key}
-              role="gridcell"
-              className={[
-                'today-heat-cell',
-                cell.inMonth ? '' : 'today-heat-cell-pad',
-                cell.inMonth ? `today-heat-level-${cell.level}` : '',
-                cell.isToday ? 'today-heat-cell-today' : '',
-                cell.isFuture ? 'today-heat-cell-future' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              style={{ animationDelay: `${Math.min(i * 6, 260)}ms` }}
-              aria-hidden={cell.inMonth ? undefined : true}
-              aria-label={
-                cell.inMonth
-                  ? `${formatDate(cell.date.getTime())}${cell.level > 0 ? ` — ${cell.level === 2 ? '2+ workouts' : '1 workout'}` : ''}`
-                  : undefined
-              }
-            >
-              {cell.inMonth && <span className="today-heat-daynum num">{cell.day}</span>}
+          {heatWeeks.map((week, wi) => (
+            <div key={week[0]?.key ?? wi} role="row" className="today-heat-row">
+              {week.map((cell, ci) => {
+                const i = wi * 7 + ci
+                return (
+                  <div
+                    key={cell.key}
+                    role="gridcell"
+                    className={[
+                      'today-heat-cell',
+                      cell.inMonth ? '' : 'today-heat-cell-pad',
+                      cell.inMonth ? `today-heat-level-${cell.level}` : '',
+                      cell.isToday ? 'today-heat-cell-today' : '',
+                      cell.isFuture ? 'today-heat-cell-future' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    style={{ animationDelay: `${Math.min(i * 6, 260)}ms` }}
+                    aria-hidden={cell.inMonth ? undefined : true}
+                    aria-label={
+                      cell.inMonth
+                        ? `${formatDate(cell.date.getTime())}${cell.level > 0 ? ` — ${cell.level === 2 ? '2+ workouts' : '1 workout'}` : ''}`
+                        : undefined
+                    }
+                  >
+                    {cell.inMonth && <span className="today-heat-daynum num">{cell.day}</span>}
+                  </div>
+                )
+              })}
             </div>
           ))}
         </div>
