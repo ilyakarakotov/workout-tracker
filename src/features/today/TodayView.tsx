@@ -5,11 +5,7 @@ import {
   selectLastSessionOf,
   selectNextDayType,
   selectStreak,
-  selectWeekSessions,
 } from '../../store/selectors'
-import { WeeklyRing } from '../../components/WeeklyRing'
-import { StreakFlame } from '../../components/StreakFlame'
-import { WeekStrip } from '../../components/WeekStrip'
 import { DayTypeBadge } from '../../components/DayTypeBadge'
 import { SettingsSheet } from '../settings/SettingsSheet'
 import { DAY_TYPES, DAY_TYPE_LABEL, type DayType } from '../../lib/types'
@@ -17,6 +13,7 @@ import { formatClock, formatDate } from '../../lib/dates'
 import { sessionVolume } from '../../lib/stats'
 import { useTicker } from './useTicker'
 import { GearIcon } from './icons'
+import { monthHeatCells, weekdayInitials } from './monthHeat'
 import './TodayView.css'
 
 export function TodayView() {
@@ -30,9 +27,23 @@ export function TodayView() {
   const cancelSession = useStore((s) => s.cancelSession)
 
   const next = selectNextDayType({ sessions })
-  const week = selectWeekSessions({ sessions, settings })
   const streak = selectStreak({ sessions, settings })
   const lastSession = selectLastSessionOf({ sessions }, next)
+
+  const now = useMemo(() => Date.now(), [])
+  const heat = useMemo(() => {
+    const d = new Date(now)
+    return monthHeatCells(d.getFullYear(), d.getMonth(), settings.weekStartsOn, sessions, now)
+  }, [now, settings.weekStartsOn, sessions])
+  const weekdayLabels = useMemo(() => weekdayInitials(settings.weekStartsOn), [settings.weekStartsOn])
+  const heatAriaLabel = `${heat.monthLabel} activity, ${heat.workoutDays} workout day${heat.workoutDays === 1 ? '' : 's'}`
+  const workoutsThisMonth = useMemo(() => {
+    const d = new Date(now)
+    return sessions.filter((s) => {
+      const sd = new Date(s.startedAt)
+      return sd.getFullYear() === d.getFullYear() && sd.getMonth() === d.getMonth()
+    }).length
+  }, [now, sessions])
 
   const preview = useMemo(() => {
     const names = templates[next].exercises
@@ -53,7 +64,7 @@ export function TodayView() {
   return (
     <div className="view">
       <header className="today-header">
-        <h1 className="today-wordmark">FORGE</h1>
+        <h1 className="today-wordmark">WORKOUT</h1>
         <button
           type="button"
           className="today-gear"
@@ -64,12 +75,48 @@ export function TodayView() {
         </button>
       </header>
 
-      <div className="today-hero">
-        <WeeklyRing filled={week.map((s) => s.dayType)} goal={settings.weeklyGoal} size={180} />
-        <StreakFlame count={streak} />
-      </div>
-
-      <WeekStrip sessions={sessions} weekStartsOn={settings.weekStartsOn} />
+      <section className="card today-heat">
+        <div className="today-heat-head">
+          <p className="title today-heat-month">{heat.monthLabel}</p>
+        </div>
+        <div className="today-heat-weekdays" aria-hidden="true">
+          {weekdayLabels.map((label, i) => (
+            <span key={i} className="today-heat-weekday">
+              {label}
+            </span>
+          ))}
+        </div>
+        <div className="today-heat-grid" role="grid" aria-label={heatAriaLabel}>
+          {heat.cells.map((cell, i) => (
+            <div
+              key={cell.key}
+              role="gridcell"
+              className={[
+                'today-heat-cell',
+                cell.inMonth ? '' : 'today-heat-cell-pad',
+                cell.inMonth ? `today-heat-level-${cell.level}` : '',
+                cell.isToday ? 'today-heat-cell-today' : '',
+                cell.isFuture ? 'today-heat-cell-future' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              style={{ animationDelay: `${Math.min(i * 6, 260)}ms` }}
+              aria-hidden={cell.inMonth ? undefined : true}
+              aria-label={
+                cell.inMonth
+                  ? `${formatDate(cell.date.getTime())}${cell.level > 0 ? ` — ${cell.level === 2 ? '2+ workouts' : '1 workout'}` : ''}`
+                  : undefined
+              }
+            >
+              {cell.inMonth && <span className="today-heat-daynum num">{cell.day}</span>}
+            </div>
+          ))}
+        </div>
+        <p className="micro today-heat-footer">
+          {workoutsThisMonth} workout{workoutsThisMonth === 1 ? '' : 's'} this month
+          {streak > 0 ? ` · ${streak}-week streak` : ''}
+        </p>
+      </section>
 
       {activeSession ? (
         <>
