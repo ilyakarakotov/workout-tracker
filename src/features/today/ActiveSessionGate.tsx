@@ -4,12 +4,12 @@ import { selectWeekSessions } from '../../store/selectors'
 import { DayTypeBadge } from '../../components/DayTypeBadge'
 import { formatClock } from '../../lib/dates'
 import { buzz } from '../../lib/haptics'
-import { SessionExerciseCard, type EditorKey } from './SessionExerciseCard'
+import { SessionExerciseCard } from './SessionExerciseCard'
 import { RestTimerPill } from './RestTimerPill'
 import { AddExerciseSheet } from './AddExerciseSheet'
 import { SummarySheet } from './SummarySheet'
 import { useTicker } from './useTicker'
-import { restRemaining } from './restTimer'
+import { restRemaining, shouldStartRestTimer } from './restTimer'
 import { CloseIcon } from './icons'
 import './ActiveSessionGate.css'
 
@@ -25,14 +25,13 @@ export function ActiveSessionGate() {
   const exercises = useStore((s) => s.exercises)
   const cancelSession = useStore((s) => s.cancelSession)
   const finishSession = useStore((s) => s.finishSession)
-  const toggleSetDone = useStore((s) => s.toggleSetDone)
-  const updateActiveSet = useStore((s) => s.updateActiveSet)
+  const enterActiveWeight = useStore((s) => s.enterActiveWeight)
+  const enterActiveReps = useStore((s) => s.enterActiveReps)
   const addSetToActive = useStore((s) => s.addSetToActive)
   const removeSetFromActive = useStore((s) => s.removeSetFromActive)
   const addExerciseToActive = useStore((s) => s.addExerciseToActive)
   const removeExerciseFromActive = useStore((s) => s.removeExerciseFromActive)
 
-  const [openEditor, setOpenEditor] = useState<EditorKey | null>(null)
   const [restStart, setRestStart] = useState<number | null>(null)
   const [addExOpen, setAddExOpen] = useState(false)
   const [justFinished, setJustFinished] = useState<string | null>(null)
@@ -51,7 +50,6 @@ export function ActiveSessionGate() {
   // reset per-session UI state once a session ends (finish or discard)
   useEffect(() => {
     if (!active) {
-      setOpenEditor(null)
       setRestStart(null)
       setAddExOpen(false)
     }
@@ -64,14 +62,16 @@ export function ActiveSessionGate() {
     : null
   const weekSessions = selectWeekSessions({ sessions, settings })
 
-  function handleToggleDone(exIdx: number, setIdx: number, wasDone: boolean) {
-    toggleSetDone(exIdx, setIdx)
-    buzz(10)
-    if (!wasDone && settings.restSeconds > 0) setRestStart(Date.now())
+  function handleCommitWeight(exIdx: number, setIdx: number, weight: number | null) {
+    enterActiveWeight(exIdx, setIdx, weight)
   }
 
-  function handleToggleEditor(key: EditorKey) {
-    setOpenEditor((cur) => (cur && cur.exIdx === key.exIdx && cur.setIdx === key.setIdx ? null : key))
+  function handleCommitReps(exIdx: number, setIdx: number, reps: number | null) {
+    const wasDone = active?.exercises[exIdx]?.sets[setIdx]?.done ?? false
+    const newlyDone = !wasDone && reps !== null
+    enterActiveReps(exIdx, setIdx, reps)
+    if (newlyDone) buzz(10)
+    if (shouldStartRestTimer(wasDone, reps, settings.restSeconds)) setRestStart(Date.now())
   }
 
   function handleRemoveExercise(exIdx: number) {
@@ -124,10 +124,8 @@ export function ActiveSessionGate() {
                   exIdx={exIdx}
                   dayType={active.dayType}
                   unit={settings.unit}
-                  openEditor={openEditor}
-                  onToggleEditor={handleToggleEditor}
-                  onToggleDone={handleToggleDone}
-                  onUpdateSet={updateActiveSet}
+                  onCommitWeight={handleCommitWeight}
+                  onCommitReps={handleCommitReps}
                   onRemoveSet={removeSetFromActive}
                   onAddSet={addSetToActive}
                   onRemoveExercise={handleRemoveExercise}
@@ -141,16 +139,6 @@ export function ActiveSessionGate() {
             >
               + add exercise
             </button>
-          </div>
-
-          <div className="sess-footer">
-            {restStart != null && (
-              <RestTimerPill
-                remaining={remaining}
-                total={settings.restSeconds}
-                onSkip={() => setRestStart(null)}
-              />
-            )}
             <button
               type="button"
               className={`btn ${active.dayType} sess-finish`}
@@ -160,6 +148,16 @@ export function ActiveSessionGate() {
               Finish workout
             </button>
           </div>
+
+          {restStart != null && (
+            <div className="sess-footer">
+              <RestTimerPill
+                remaining={remaining}
+                total={settings.restSeconds}
+                onSkip={() => setRestStart(null)}
+              />
+            </div>
+          )}
 
           <AddExerciseSheet
             open={addExOpen}

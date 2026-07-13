@@ -1,15 +1,28 @@
+import { useState } from 'react'
 import type { SessionExercise, DayType, Unit, LoggedSet } from '../../lib/types'
-import { NumberStepper } from '../../components/NumberStepper'
 import { ExerciseThumb } from '../../components/ExerciseThumb'
-import { CheckIcon, CloseIcon } from './icons'
+import { CloseIcon, CheckIcon } from './icons'
 
-export interface EditorKey {
-  exIdx: number
-  setIdx: number
+/** Formats a stored number the way we want it to appear once a field is "touched". */
+function formatNum(n: number): string {
+  return String(n)
 }
 
-function sameKey(a: EditorKey | null, b: EditorKey): boolean {
-  return !!a && a.exIdx === b.exIdx && a.setIdx === b.setIdx
+/**
+ * Parses raw input text into a commit value:
+ * - `null` for an empty field (explicit clear)
+ * - `undefined` for text that doesn't parse yet (mid-edit, e.g. "-" or "")
+ * - a `number` once it parses, even if not "finished" (e.g. "12." → 12) —
+ *   this is deliberate: the caller commits on every parseable keystroke,
+ *   while the local text buffer keeps the raw string so a trailing "." or
+ *   "," isn't clobbered before the user finishes typing.
+ */
+function parseFieldInput(raw: string): number | null | undefined {
+  if (raw.trim() === '') return null
+  const normalized = raw.trim().replace(',', '.')
+  if (normalized === '' || normalized === '-' || normalized === '.') return undefined
+  const n = Number(normalized)
+  return Number.isFinite(n) ? n : undefined
 }
 
 interface SetRowProps {
@@ -18,11 +31,30 @@ interface SetRowProps {
   set: LoggedSet
   dayType: DayType
   unit: Unit
-  isOpen: boolean
-  onToggleEditor: (key: EditorKey) => void
-  onToggleDone: (exIdx: number, setIdx: number, wasDone: boolean) => void
-  onUpdate: (exIdx: number, setIdx: number, patch: Partial<LoggedSet>) => void
+  onCommitWeight: (exIdx: number, setIdx: number, weight: number | null) => void
+  onCommitReps: (exIdx: number, setIdx: number, reps: number | null) => void
   onRemove: (exIdx: number, setIdx: number) => void
+}
+
+/**
+ * Keeps a local text buffer per field so intermediate strings like "12." or
+ * "" never fight the store's numeric value while the user is mid-edit.
+ * Resyncs from the store (the React-recommended "adjust state during
+ * render" pattern) only when the underlying committed value actually
+ * changes for a reason other than this row's own last edit — e.g. a set
+ * above it was removed and this row's index now refers to different data,
+ * or the session was resumed from storage.
+ */
+function useGhostField(touched: boolean | undefined, value: number) {
+  const [snapshot, setSnapshot] = useState({ touched: !!touched, value })
+  const [text, setText] = useState(() => (touched ? formatNum(value) : ''))
+
+  if (snapshot.touched !== !!touched || (touched && snapshot.value !== value)) {
+    setSnapshot({ touched: !!touched, value })
+    setText(touched ? formatNum(value) : '')
+  }
+
+  return [text, setText] as const
 }
 
 function SetRow({
@@ -31,65 +63,75 @@ function SetRow({
   set,
   dayType,
   unit,
-  isOpen,
-  onToggleEditor,
-  onToggleDone,
-  onUpdate,
+  onCommitWeight,
+  onCommitReps,
   onRemove,
 }: SetRowProps) {
-  const weightStep = unit === 'kg' ? 2.5 : 5
+  const [weightText, setWeightText] = useGhostField(set.weightTouched, set.weight)
+  const [repsText, setRepsText] = useGhostField(set.repsTouched, set.reps)
+
+  const ghostWeight = formatNum(set.ghostWeight ?? set.weight)
+  const ghostReps = formatNum(set.ghostReps ?? set.reps)
+
+  function handleWeightChange(raw: string) {
+    setWeightText(raw)
+    const parsed = parseFieldInput(raw)
+    if (parsed === undefined) return
+    onCommitWeight(exIdx, setIdx, parsed)
+  }
+
+  function handleWeightBlur() {
+    setWeightText(set.weightTouched ? formatNum(set.weight) : '')
+  }
+
+  function handleRepsChange(raw: string) {
+    setRepsText(raw)
+    const parsed = parseFieldInput(raw)
+    if (parsed === undefined) return
+    onCommitReps(exIdx, setIdx, parsed)
+  }
+
+  function handleRepsBlur() {
+    setRepsText(set.repsTouched ? formatNum(set.reps) : '')
+  }
+
   return (
     <li className={`sess-set sess-set-${dayType}${set.done ? ' sess-set-done' : ''}`}>
-      <div className="sess-set-row">
-        <span className="sess-set-idx num">{setIdx + 1}</span>
-        <button
-          type="button"
-          className="sess-set-values"
-          aria-expanded={isOpen}
-          aria-label={`Edit set ${setIdx + 1}, ${set.weight} ${unit} by ${set.reps} reps`}
-          onClick={() => onToggleEditor({ exIdx, setIdx })}
-        >
-          <span className="num sess-set-weight">
-            {set.weight}
-            <span className="sess-unit">{unit}</span>
-          </span>
-          <span className="sess-set-x">×</span>
-          <span className="num sess-set-reps">{set.reps}</span>
-        </button>
-        <button
-          type="button"
-          className={`sess-check${set.done ? ' sess-check-done' : ''}`}
-          aria-pressed={set.done}
-          aria-label={set.done ? `Set ${setIdx + 1} done, tap to undo` : `Mark set ${setIdx + 1} done`}
-          onClick={() => onToggleDone(exIdx, setIdx, set.done)}
-        >
-          <CheckIcon />
-        </button>
-      </div>
-      {isOpen && (
-        <div className="sess-editor">
-          <NumberStepper
-            label={`set ${setIdx + 1} weight`}
-            value={set.weight}
-            step={weightStep}
-            suffix={unit}
-            onChange={(w) => onUpdate(exIdx, setIdx, { weight: w })}
-          />
-          <NumberStepper
-            label={`set ${setIdx + 1} reps`}
-            value={set.reps}
-            step={1}
-            onChange={(r) => onUpdate(exIdx, setIdx, { reps: r })}
-          />
-          <button
-            type="button"
-            className="sess-remove-set"
-            onClick={() => onRemove(exIdx, setIdx)}
-          >
-            Remove set
-          </button>
-        </div>
-      )}
+      <span className="sess-set-idx num">{setIdx + 1}</span>
+      <span className="sess-set-check" aria-hidden="true">
+        {set.done && <CheckIcon />}
+      </span>
+      <input
+        type="text"
+        inputMode="decimal"
+        className="sess-set-input num"
+        aria-label={`Set ${setIdx + 1} weight (${unit})`}
+        placeholder={ghostWeight}
+        value={weightText}
+        onChange={(e) => handleWeightChange(e.target.value)}
+        onBlur={handleWeightBlur}
+      />
+      <span className="sess-set-x" aria-hidden="true">
+        ×
+      </span>
+      <input
+        type="text"
+        inputMode="numeric"
+        className="sess-set-input num"
+        aria-label={`Set ${setIdx + 1} reps`}
+        placeholder={ghostReps}
+        value={repsText}
+        onChange={(e) => handleRepsChange(e.target.value)}
+        onBlur={handleRepsBlur}
+      />
+      <button
+        type="button"
+        className="sess-set-remove"
+        aria-label={`Remove set ${setIdx + 1}`}
+        onClick={() => onRemove(exIdx, setIdx)}
+      >
+        <CloseIcon />
+      </button>
     </li>
   )
 }
@@ -99,10 +141,8 @@ export interface SessionExerciseCardProps {
   exIdx: number
   dayType: DayType
   unit: Unit
-  openEditor: EditorKey | null
-  onToggleEditor: (key: EditorKey) => void
-  onToggleDone: (exIdx: number, setIdx: number, wasDone: boolean) => void
-  onUpdateSet: (exIdx: number, setIdx: number, patch: Partial<LoggedSet>) => void
+  onCommitWeight: (exIdx: number, setIdx: number, weight: number | null) => void
+  onCommitReps: (exIdx: number, setIdx: number, reps: number | null) => void
   onRemoveSet: (exIdx: number, setIdx: number) => void
   onAddSet: (exIdx: number) => void
   onRemoveExercise: (exIdx: number) => void
@@ -113,10 +153,8 @@ export function SessionExerciseCard({
   exIdx,
   dayType,
   unit,
-  openEditor,
-  onToggleEditor,
-  onToggleDone,
-  onUpdateSet,
+  onCommitWeight,
+  onCommitReps,
   onRemoveSet,
   onAddSet,
   onRemoveExercise,
@@ -152,10 +190,8 @@ export function SessionExerciseCard({
             set={set}
             dayType={dayType}
             unit={unit}
-            isOpen={sameKey(openEditor, { exIdx, setIdx })}
-            onToggleEditor={onToggleEditor}
-            onToggleDone={onToggleDone}
-            onUpdate={onUpdateSet}
+            onCommitWeight={onCommitWeight}
+            onCommitReps={onCommitReps}
             onRemove={onRemoveSet}
           />
         ))}
