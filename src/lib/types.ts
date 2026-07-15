@@ -50,6 +50,8 @@ export interface SessionExercise {
   /** name snapshot so history survives library edits/deletes */
   name: string
   sets: LoggedSet[]
+  /** per-exercise note; trimmed on finish, absent when empty */
+  note?: string
 }
 
 export interface Session {
@@ -60,6 +62,8 @@ export interface Session {
   /** epoch ms */
   endedAt: number
   exercises: SessionExercise[]
+  /** workout-level note; trimmed on finish, absent when empty */
+  note?: string
 }
 
 /** a session in progress — no endedAt yet */

@@ -43,6 +43,12 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 export interface AppState extends PersistedData {
+  /* ---- device-local active-session UI state (persisted, not exported) ---- */
+  /** epoch ms anchor of the running rest countdown; null = no rest running */
+  restStartedAt: number | null
+  /** true when the active-workout takeover is hidden and the user is browsing the app */
+  sessionMinimized: boolean
+
   /* ---- session lifecycle ---- */
   startSession: (dayType: DayType) => void
   cancelSession: () => void
@@ -58,6 +64,23 @@ export interface AppState extends PersistedData {
   removeSetFromActive: (exIndex: number, setIndex: number) => void
   addExerciseToActive: (exerciseId: string) => void
   removeExerciseFromActive: (exIndex: number) => void
+  /** replace the exercise at exIndex in place with a fresh SessionExercise (built like
+   * addExerciseToActive); no-op if no active session, bad index, unknown exercise id, or
+   * the id already appears in the active lineup. Discards the old exercise's sets/note. */
+  replaceExerciseInActive: (exIndex: number, newExerciseId: string) => void
+  /** reorder within the active session only; clamped like moveTemplateExercise (out-of-range → no-op) */
+  moveExerciseInActive: (exIndex: number, dir: -1 | 1) => void
+
+  /* ---- active session notes ---- */
+  setSessionNote: (note: string) => void
+  setExerciseNote: (exIndex: number, note: string) => void
+
+  /* ---- persistent rest timer ---- */
+  startRest: () => void
+  clearRest: () => void
+
+  /* ---- navigation ---- */
+  setSessionMinimized: (minimized: boolean) => void
 
   /* ---- history editing ---- */
   updateSession: (id: string, updater: (s: Session) => Session) => void
@@ -131,6 +154,8 @@ export const useStore = create<AppState>()(
       sessions: [],
       activeSession: null,
       settings: DEFAULT_SETTINGS,
+      restStartedAt: null,
+      sessionMinimized: false,
 
       startSession: (dayType) => {
         const { templates, sessions, exercises, activeSession } = get()
@@ -149,23 +174,41 @@ export const useStore = create<AppState>()(
               sets: prefillSets(sorted, te.exerciseId, te.sets),
             })),
         }
-        set({ activeSession: active })
+        set({ activeSession: active, restStartedAt: null, sessionMinimized: false })
       },
 
-      cancelSession: () => set({ activeSession: null }),
+      cancelSession: () =>
+        set({ activeSession: null, restStartedAt: null, sessionMinimized: false }),
 
       finishSession: () => {
         const { activeSession, sessions } = get()
         if (!activeSession) return null
-        // strip active-session-only helper fields so persisted history stays clean
-        const cleanExercises = activeSession.exercises.map((ex) => ({
-          ...ex,
-          sets: ex.sets.map(({ weight, reps, done }) => ({ weight, reps, done })),
-        }))
-        const done: Session = { ...activeSession, exercises: cleanExercises, endedAt: Date.now() }
+        // strip active-session-only helper fields so persisted history stays clean;
+        // trim notes and drop them entirely when empty/whitespace-only
+        const cleanExercises = activeSession.exercises.map((ex) => {
+          const trimmedNote = ex.note?.trim()
+          const clean: Session['exercises'][number] = {
+            exerciseId: ex.exerciseId,
+            name: ex.name,
+            sets: ex.sets.map(({ weight, reps, done }) => ({ weight, reps, done })),
+          }
+          if (trimmedNote) clean.note = trimmedNote
+          return clean
+        })
+        const trimmedSessionNote = activeSession.note?.trim()
+        const done: Session = {
+          id: activeSession.id,
+          dayType: activeSession.dayType,
+          startedAt: activeSession.startedAt,
+          endedAt: Date.now(),
+          exercises: cleanExercises,
+        }
+        if (trimmedSessionNote) done.note = trimmedSessionNote
         set({
           activeSession: null,
           sessions: [...sessions, done].sort((a, b) => a.startedAt - b.startedAt),
+          restStartedAt: null,
+          sessionMinimized: false,
         })
         return done.id
       },
@@ -280,6 +323,58 @@ export const useStore = create<AppState>()(
             },
           }
         }),
+
+      replaceExerciseInActive: (exIndex, newExerciseId) =>
+        set((st) => {
+          if (!st.activeSession) return st
+          const exercises = st.activeSession.exercises
+          if (exIndex < 0 || exIndex >= exercises.length) return st
+          const ex = st.exercises[newExerciseId]
+          if (!ex) return st
+          if (exercises.some((e) => e.exerciseId === newExerciseId)) return st
+          const tpl = st.templates[st.activeSession.dayType].exercises.find(
+            (te) => te.exerciseId === newExerciseId,
+          )
+          const sorted = [...st.sessions].sort((a, b) => a.startedAt - b.startedAt)
+          const sets = prefillSets(sorted, newExerciseId, tpl?.sets ?? [{ reps: 10, weight: 0 }])
+          const nextExercises = exercises.map((e, i) =>
+            i !== exIndex ? e : { exerciseId: newExerciseId, name: ex.name, sets },
+          )
+          return { activeSession: { ...st.activeSession, exercises: nextExercises } }
+        }),
+
+      moveExerciseInActive: (exIndex, dir) =>
+        set((st) => {
+          if (!st.activeSession) return st
+          const exercises = st.activeSession.exercises
+          const to = exIndex + dir
+          if (to < 0 || to >= exercises.length) return st
+          const arr = [...exercises]
+          const [item] = arr.splice(exIndex, 1)
+          arr.splice(to, 0, item)
+          return { activeSession: { ...st.activeSession, exercises: arr } }
+        }),
+
+      setSessionNote: (note) =>
+        set((st) => {
+          if (!st.activeSession) return st
+          return { activeSession: { ...st.activeSession, note } }
+        }),
+
+      setExerciseNote: (exIndex, note) =>
+        set((st) => {
+          if (!st.activeSession) return st
+          const exercises = st.activeSession.exercises.map((ex, i) =>
+            i !== exIndex ? ex : { ...ex, note },
+          )
+          return { activeSession: { ...st.activeSession, exercises } }
+        }),
+
+      startRest: () => set({ restStartedAt: Date.now() }),
+
+      clearRest: () => set({ restStartedAt: null }),
+
+      setSessionMinimized: (minimized) => set({ sessionMinimized: minimized }),
 
       updateSession: (id, updater) =>
         set((st) => ({
@@ -450,6 +545,9 @@ export const useStore = create<AppState>()(
             sessions: [...data.sessions].sort((a, b) => a.startedAt - b.startedAt),
             activeSession: data.activeSession ?? null,
             settings: { ...DEFAULT_SETTINGS, ...(data.settings ?? {}), weeklyGoal: 6 },
+            // device-local UI state — never taken from an imported file
+            restStartedAt: null,
+            sessionMinimized: false,
           })
           return { ok: true as const }
         } catch {
@@ -464,6 +562,8 @@ export const useStore = create<AppState>()(
           sessions: [],
           activeSession: null,
           settings: DEFAULT_SETTINGS,
+          restStartedAt: null,
+          sessionMinimized: false,
         }),
     }),
     {
@@ -475,6 +575,8 @@ export const useStore = create<AppState>()(
         sessions: st.sessions,
         activeSession: st.activeSession,
         settings: st.settings,
+        restStartedAt: st.restStartedAt,
+        sessionMinimized: st.sessionMinimized,
       }),
     },
   ),
