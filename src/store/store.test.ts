@@ -226,6 +226,28 @@ describe('store', () => {
     expect(useStore.getState().settings.weeklyGoal).toBe(6)
     expect(useStore.getState().settings.unit).toBe('lb')
   })
+
+  it('restAlerts defaults to false and can be toggled via updateSettings', () => {
+    expect(useStore.getState().settings.restAlerts).toBe(false)
+    useStore.getState().updateSettings({ restAlerts: true })
+    expect(useStore.getState().settings.restAlerts).toBe(true)
+  })
+
+  it('importing a pre-restAlerts export (old settings shape) defaults restAlerts to false', () => {
+    const oldExport = JSON.stringify({
+      app: 'workout/v1',
+      exportedAt: Date.now(),
+      exercises: useStore.getState().exercises,
+      templates: useStore.getState().templates,
+      sessions: [],
+      activeSession: null,
+      settings: { unit: 'kg', weekStartsOn: 1, weeklyGoal: 6, restSeconds: 90 },
+    })
+    useStore.getState().updateSettings({ restAlerts: true })
+    const res = useStore.getState().importData(oldExport)
+    expect(res.ok).toBe(true)
+    expect(useStore.getState().settings.restAlerts).toBe(false)
+  })
 })
 
 describe('active-session lineup mutations, notes, rest timer, minimize', () => {

@@ -2,8 +2,16 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../../store/store'
 import { selectWeekSessions } from '../../store/selectors'
 import { DayTypeBadge } from '../../components/DayTypeBadge'
+import { DAY_TYPE_LABEL } from '../../lib/types'
+import type { ActiveSession } from '../../lib/types'
 import { formatClock } from '../../lib/dates'
 import { buzz } from '../../lib/haptics'
+import {
+  clearWorkoutBadge,
+  notificationPermission,
+  notifyRestDone,
+  setWorkoutBadge,
+} from '../../lib/notify'
 import { SessionExerciseCard } from './SessionExerciseCard'
 import { RestTimerPill } from './RestTimerPill'
 import { AddExerciseSheet } from './AddExerciseSheet'
@@ -15,6 +23,13 @@ import { useTicker } from './useTicker'
 import { isStaleRest, restRemaining, shouldStartRestTimer } from './restTimer'
 import { CloseIcon, ChevronDownIcon } from './icons'
 import './ActiveSessionGate.css'
+
+/** First exercise in the lineup with an unlogged set, if any — used as the
+ * optional "next up" line in the rest-done notification. Trivial by design:
+ * no attempt to special-case supersets or skipped exercises. */
+function nextUndoneExerciseName(session: ActiveSession): string | undefined {
+  return session.exercises.find((ex) => ex.sets.some((s) => !s.done))?.name
+}
 
 /**
  * Full-screen overlay rendered whenever a session is in progress, and while
@@ -66,9 +81,40 @@ export function ActiveSessionGate() {
     }
     if (remaining <= 0) {
       buzz([10, 60, 20])
+      if (
+        active &&
+        settings.restAlerts &&
+        notificationPermission() === 'granted' &&
+        document.visibilityState === 'hidden'
+      ) {
+        void notifyRestDone(active.dayType, nextUndoneExerciseName(active))
+      }
       clearRest()
     }
-  }, [restStartedAt, remaining, restNow, settings.restSeconds, clearRest])
+  }, [restStartedAt, remaining, restNow, settings.restSeconds, settings.restAlerts, active, clearRest])
+
+  // app icon badge reflects "a workout is in progress", independent of
+  // whether the takeover is minimized
+  const hasActiveSession = active != null
+  useEffect(() => {
+    if (hasActiveSession) setWorkoutBadge()
+    else clearWorkoutBadge()
+    return () => clearWorkoutBadge()
+  }, [hasActiveSession])
+
+  // while minimized, keep the tab title oriented (elapsed + day type) so a
+  // backgrounded/minimized session is still legible from the tab strip;
+  // restore the plain app title otherwise, and always on unmount
+  useEffect(() => {
+    if (active && sessionMinimized) {
+      document.title = `${formatClock(elapsedNow - active.startedAt)} · ${DAY_TYPE_LABEL[active.dayType]} — Workout`
+    } else {
+      document.title = 'Workout'
+    }
+    return () => {
+      document.title = 'Workout'
+    }
+  }, [active, sessionMinimized, elapsedNow])
 
   // reset per-session UI state once a session ends (finish or discard)
   useEffect(() => {
@@ -246,7 +292,12 @@ export function ActiveSessionGate() {
 
           {restStartedAt != null && (
             <div className="sess-footer">
-              <RestTimerPill remaining={remaining} total={settings.restSeconds} onSkip={clearRest} />
+              <RestTimerPill
+                remaining={remaining}
+                total={settings.restSeconds}
+                dayType={active.dayType}
+                onSkip={clearRest}
+              />
             </div>
           )}
 

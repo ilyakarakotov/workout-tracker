@@ -77,6 +77,8 @@ export interface Settings {
   weeklyGoal: number
   /** rest timer seconds; 0 = off */
   restSeconds: number
+  /** opt-in: notify + badge when rest ends while the app is backgrounded */
+  restAlerts: boolean
 }
 
 export interface PersistedData {

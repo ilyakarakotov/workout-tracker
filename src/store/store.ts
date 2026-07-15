@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS: Settings = {
   weekStartsOn: 1,
   weeklyGoal: 6,
   restSeconds: 90,
+  restAlerts: false,
 }
 
 export interface AppState extends PersistedData {

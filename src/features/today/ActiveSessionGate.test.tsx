@@ -3,6 +3,25 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useStore } from '../../store/store'
 import { ActiveSessionGate } from './ActiveSessionGate'
+import { clearWorkoutBadge, notificationPermission, notifyRestDone, setWorkoutBadge } from '../../lib/notify'
+
+vi.mock('../../lib/notify', () => ({
+  notifyRestDone: vi.fn().mockResolvedValue(undefined),
+  notificationPermission: vi.fn(() => 'unsupported' as const),
+  setWorkoutBadge: vi.fn(),
+  clearWorkoutBadge: vi.fn(),
+  canNotify: vi.fn(() => false),
+  requestNotifyPermission: vi.fn(async () => false),
+  stageIconSvg: vi.fn(() => '<svg/>'),
+  stageIconUrl: vi.fn(() => 'data:image/svg+xml,'),
+}))
+
+function setDocumentHidden(hidden: boolean) {
+  Object.defineProperty(document, 'visibilityState', {
+    value: hidden ? 'hidden' : 'visible',
+    configurable: true,
+  })
+}
 
 function reset() {
   useStore.getState().cancelSession()
@@ -200,5 +219,159 @@ describe('ActiveSessionGate — minimize + floating pill', () => {
         name: /^Return to Push workout, 0:05 elapsed, rest 1:25 remaining$/,
       }),
     ).toBeInTheDocument()
+  })
+})
+
+describe('ActiveSessionGate — rest-done notification gating', () => {
+  beforeEach(() => {
+    reset()
+    vi.useFakeTimers()
+    vi.mocked(notifyRestDone).mockClear()
+    vi.mocked(notificationPermission).mockReturnValue('granted')
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+    setDocumentHidden(false)
+  })
+
+  function completeSetAndRunOutTheClock() {
+    fireEvent.change(screen.getByLabelText('Bench Press set 1 reps, not logged'), {
+      target: { value: '8' },
+    })
+    act(() => {
+      vi.advanceTimersByTime(90_000)
+    })
+  }
+
+  it('notifies at the natural rest-zero crossing when hidden + restAlerts enabled + permission granted', () => {
+    useStore.getState().updateSettings({ restAlerts: true })
+    useStore.getState().startSession('push')
+    setDocumentHidden(true)
+    render(<ActiveSessionGate />)
+
+    completeSetAndRunOutTheClock()
+
+    expect(notifyRestDone).toHaveBeenCalledTimes(1)
+    expect(notifyRestDone).toHaveBeenCalledWith('push', expect.any(String))
+  })
+
+  it('does not notify when the app is visible (foreground)', () => {
+    useStore.getState().updateSettings({ restAlerts: true })
+    useStore.getState().startSession('push')
+    setDocumentHidden(false)
+    render(<ActiveSessionGate />)
+
+    completeSetAndRunOutTheClock()
+
+    expect(notifyRestDone).not.toHaveBeenCalled()
+  })
+
+  it('does not notify when restAlerts is off', () => {
+    useStore.getState().updateSettings({ restAlerts: false })
+    useStore.getState().startSession('push')
+    setDocumentHidden(true)
+    render(<ActiveSessionGate />)
+
+    completeSetAndRunOutTheClock()
+
+    expect(notifyRestDone).not.toHaveBeenCalled()
+  })
+
+  it('does not notify when notification permission is not granted', () => {
+    vi.mocked(notificationPermission).mockReturnValue('default')
+    useStore.getState().updateSettings({ restAlerts: true })
+    useStore.getState().startSession('push')
+    setDocumentHidden(true)
+    render(<ActiveSessionGate />)
+
+    completeSetAndRunOutTheClock()
+
+    expect(notifyRestDone).not.toHaveBeenCalled()
+  })
+
+  it('does not notify on a stale (reload-inherited) rest timer, even if hidden + enabled + granted', () => {
+    useStore.getState().updateSettings({ restAlerts: true })
+    useStore.getState().startSession('push')
+    useStore.setState({ restStartedAt: Date.now() - 95_000 })
+    setDocumentHidden(true)
+
+    render(<ActiveSessionGate />)
+
+    expect(notifyRestDone).not.toHaveBeenCalled()
+  })
+})
+
+describe('ActiveSessionGate — app badge lifecycle', () => {
+  beforeEach(() => {
+    reset()
+    vi.mocked(setWorkoutBadge).mockClear()
+    vi.mocked(clearWorkoutBadge).mockClear()
+  })
+
+  afterEach(() => cleanup())
+
+  it('sets the badge once a session becomes active, and clears it when the session ends', () => {
+    render(<ActiveSessionGate />)
+    expect(setWorkoutBadge).not.toHaveBeenCalled()
+
+    act(() => {
+      useStore.getState().startSession('push')
+    })
+    expect(setWorkoutBadge).toHaveBeenCalled()
+
+    vi.mocked(clearWorkoutBadge).mockClear()
+    act(() => {
+      useStore.getState().cancelSession()
+    })
+    expect(clearWorkoutBadge).toHaveBeenCalled()
+  })
+
+  it('clears the badge on unmount', () => {
+    useStore.getState().startSession('push')
+    const { unmount } = render(<ActiveSessionGate />)
+    vi.mocked(clearWorkoutBadge).mockClear()
+
+    unmount()
+    expect(clearWorkoutBadge).toHaveBeenCalled()
+  })
+})
+
+describe('ActiveSessionGate — document.title reflects the minimized session', () => {
+  beforeEach(() => {
+    reset()
+    vi.useFakeTimers()
+    document.title = 'Workout'
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+    document.title = 'Workout'
+  })
+
+  it('shows elapsed + day type while minimized, restores "Workout" on restore and on unmount', () => {
+    useStore.getState().startSession('push')
+    const { unmount } = render(<ActiveSessionGate />)
+    expect(document.title).toBe('Workout')
+
+    fireEvent.click(screen.getByLabelText('Hide workout — it keeps running'))
+    expect(document.title).toBe('0:00 · Push — Workout')
+
+    act(() => {
+      vi.advanceTimersByTime(5000)
+    })
+    expect(document.title).toBe('0:05 · Push — Workout')
+
+    fireEvent.click(screen.getByRole('button', { name: /^Return to/ }))
+    expect(document.title).toBe('Workout')
+
+    fireEvent.click(screen.getByLabelText('Hide workout — it keeps running'))
+    expect(document.title).toBe('0:05 · Push — Workout')
+
+    unmount()
+    expect(document.title).toBe('Workout')
   })
 })
