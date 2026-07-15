@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Sheet } from '../../components/Sheet'
 import { useStore } from '../../store/store'
 import type { Unit } from '../../lib/types'
+import { canNotify, requestNotifyPermission } from '../../lib/notify'
 import { Segmented } from './Segmented'
 import './SettingsSheet.css'
 
@@ -20,6 +21,23 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
   const resetAll = useStore((s) => s.resetAll)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [notifyBlocked, setNotifyBlocked] = useState(false)
+  const notifySupported = canNotify()
+
+  const handleRestAlertsChange = async (next: 'on' | 'off') => {
+    if (next === 'off') {
+      setNotifyBlocked(false)
+      updateSettings({ restAlerts: false })
+      return
+    }
+    const granted = await requestNotifyPermission()
+    if (granted) {
+      setNotifyBlocked(false)
+      updateSettings({ restAlerts: true })
+    } else {
+      setNotifyBlocked(true)
+    }
+  }
 
   const handleExport = () => {
     const json = exportData()
@@ -98,6 +116,34 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           onChange={(restSeconds) => updateSettings({ restSeconds })}
           options={REST_OPTIONS.map((s) => ({ value: s, label: restLabel(s) }))}
         />
+      </section>
+
+      <section className="settings-section">
+        <p className="label">Rest alerts</p>
+        {notifySupported ? (
+          <>
+            <Segmented<'on' | 'off'>
+              ariaLabel="Rest alerts"
+              value={settings.restAlerts ? 'on' : 'off'}
+              onChange={handleRestAlertsChange}
+              options={[
+                { value: 'off', label: 'Off' },
+                { value: 'on', label: 'On' },
+              ]}
+            />
+            <p className="micro">Notifies you when rest ends, if the app is in the background.</p>
+            {notifyBlocked ? (
+              <p className="micro settings-error" role="status">
+                Notifications are blocked for this app.
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <div className="settings-static">Off</div>
+            <p className="micro">Not supported on this device.</p>
+          </>
+        )}
       </section>
 
       <section className="settings-section">
