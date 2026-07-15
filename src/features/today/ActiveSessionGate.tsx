@@ -7,10 +7,13 @@ import { buzz } from '../../lib/haptics'
 import { SessionExerciseCard } from './SessionExerciseCard'
 import { RestTimerPill } from './RestTimerPill'
 import { AddExerciseSheet } from './AddExerciseSheet'
+import { ExerciseActionsSheet } from './ExerciseActionsSheet'
 import { SummarySheet } from './SummarySheet'
+import { NoteField } from './NoteField'
+import { WorkoutPill } from './WorkoutPill'
 import { useTicker } from './useTicker'
-import { restRemaining, shouldStartRestTimer } from './restTimer'
-import { CloseIcon } from './icons'
+import { isStaleRest, restRemaining, shouldStartRestTimer } from './restTimer'
+import { CloseIcon, ChevronDownIcon } from './icons'
 import './ActiveSessionGate.css'
 
 /**
@@ -23,6 +26,8 @@ export function ActiveSessionGate() {
   const sessions = useStore((s) => s.sessions)
   const settings = useStore((s) => s.settings)
   const exercises = useStore((s) => s.exercises)
+  const restStartedAt = useStore((s) => s.restStartedAt)
+  const sessionMinimized = useStore((s) => s.sessionMinimized)
   const cancelSession = useStore((s) => s.cancelSession)
   const finishSession = useStore((s) => s.finishSession)
   const enterActiveWeight = useStore((s) => s.enterActiveWeight)
@@ -31,27 +36,46 @@ export function ActiveSessionGate() {
   const removeSetFromActive = useStore((s) => s.removeSetFromActive)
   const addExerciseToActive = useStore((s) => s.addExerciseToActive)
   const removeExerciseFromActive = useStore((s) => s.removeExerciseFromActive)
+  const replaceExerciseInActive = useStore((s) => s.replaceExerciseInActive)
+  const moveExerciseInActive = useStore((s) => s.moveExerciseInActive)
+  const setSessionNote = useStore((s) => s.setSessionNote)
+  const setExerciseNote = useStore((s) => s.setExerciseNote)
+  const startRest = useStore((s) => s.startRest)
+  const clearRest = useStore((s) => s.clearRest)
+  const setSessionMinimized = useStore((s) => s.setSessionMinimized)
 
-  const [restStart, setRestStart] = useState<number | null>(null)
   const [addExOpen, setAddExOpen] = useState(false)
+  const [actionsIdx, setActionsIdx] = useState<number | null>(null)
+  const [replaceIdx, setReplaceIdx] = useState<number | null>(null)
   const [justFinished, setJustFinished] = useState<string | null>(null)
 
   const elapsedNow = useTicker(active != null, 1000)
-  const restNow = useTicker(restStart != null, 1000)
-  const remaining = restStart != null ? restRemaining(restStart, settings.restSeconds, restNow) : 0
+  const restNow = useTicker(restStartedAt != null, 1000)
+  const remaining =
+    restStartedAt != null ? restRemaining(restStartedAt, settings.restSeconds, restNow) : 0
 
+  // Single effect owns the rest countdown's terminal state so a stale timer
+  // (already expired before this render — e.g. rehydrated after a reload)
+  // can never fall through to the buzz branch: a reload always re-evaluates
+  // isStaleRest first and clears silently before "remaining <= 0" is checked.
   useEffect(() => {
-    if (restStart != null && remaining <= 0) {
-      buzz([10, 60, 20])
-      setRestStart(null)
+    if (restStartedAt == null) return
+    if (isStaleRest(restStartedAt, settings.restSeconds, restNow)) {
+      clearRest()
+      return
     }
-  }, [remaining, restStart])
+    if (remaining <= 0) {
+      buzz([10, 60, 20])
+      clearRest()
+    }
+  }, [restStartedAt, remaining, restNow, settings.restSeconds, clearRest])
 
   // reset per-session UI state once a session ends (finish or discard)
   useEffect(() => {
     if (!active) {
-      setRestStart(null)
       setAddExOpen(false)
+      setActionsIdx(null)
+      setReplaceIdx(null)
     }
   }, [active])
 
@@ -71,7 +95,7 @@ export function ActiveSessionGate() {
     const newlyDone = !wasDone && reps !== null
     enterActiveReps(exIdx, setIdx, reps)
     if (newlyDone) buzz(10)
-    if (shouldStartRestTimer(wasDone, reps, settings.restSeconds)) setRestStart(Date.now())
+    if (shouldStartRestTimer(wasDone, reps, settings.restSeconds)) startRest()
   }
 
   function handleRemoveExercise(exIdx: number) {
@@ -89,16 +113,78 @@ export function ActiveSessionGate() {
     if (id) setJustFinished(id)
   }
 
+  function handleMoveUp() {
+    if (actionsIdx == null) return
+    moveExerciseInActive(actionsIdx, -1)
+    setActionsIdx(null)
+  }
+
+  function handleMoveDown() {
+    if (actionsIdx == null) return
+    moveExerciseInActive(actionsIdx, 1)
+    setActionsIdx(null)
+  }
+
+  function handleOpenReplace() {
+    if (actionsIdx == null) return
+    setReplaceIdx(actionsIdx)
+    setActionsIdx(null)
+  }
+
+  function handleRemoveFromActions() {
+    if (actionsIdx == null) return
+    const idx = actionsIdx
+    setActionsIdx(null)
+    handleRemoveExercise(idx)
+  }
+
+  function handleCloseAddSheet() {
+    setAddExOpen(false)
+    setReplaceIdx(null)
+  }
+
+  function handleAddSheetSelect(id: string) {
+    if (replaceIdx == null) {
+      addExerciseToActive(id)
+      return
+    }
+    const ex = active?.exercises[replaceIdx]
+    if (!ex) {
+      setReplaceIdx(null)
+      return
+    }
+    const loggedCount = ex.sets.filter((s) => s.done).length
+    if (
+      loggedCount > 0 &&
+      !confirm(`Replace ${ex.name}? ${loggedCount} logged set${loggedCount === 1 ? '' : 's'} will be discarded.`)
+    ) {
+      return
+    }
+    replaceExerciseInActive(replaceIdx, id)
+    setReplaceIdx(null)
+  }
+
   const totalDone = active
     ? active.exercises.reduce((n, ex) => n + ex.sets.filter((s) => s.done).length, 0)
     : 0
   const activeExerciseIds = new Set(active?.exercises.map((e) => e.exerciseId) ?? [])
+  const actionsExercise = actionsIdx != null ? active?.exercises[actionsIdx] : undefined
+  const replaceExercise = replaceIdx != null ? active?.exercises[replaceIdx] : undefined
+  const restRemainingSec = restStartedAt != null ? remaining : null
 
   return (
     <>
-      {active && (
+      {active && !sessionMinimized && (
         <div className="sess-root">
           <div className="sess-header">
+            <button
+              type="button"
+              className="sess-minimize"
+              aria-label="Hide workout — it keeps running"
+              onClick={() => setSessionMinimized(true)}
+            >
+              <ChevronDownIcon />
+            </button>
             <DayTypeBadge dayType={active.dayType} />
             <span className="num sess-timer">{formatClock(elapsedNow - active.startedAt)}</span>
             <button
@@ -128,7 +214,8 @@ export function ActiveSessionGate() {
                   onCommitReps={handleCommitReps}
                   onRemoveSet={removeSetFromActive}
                   onAddSet={addSetToActive}
-                  onRemoveExercise={handleRemoveExercise}
+                  onOpenActions={setActionsIdx}
+                  onExerciseNote={setExerciseNote}
                 />
               ))
             )}
@@ -139,6 +226,14 @@ export function ActiveSessionGate() {
             >
               + add exercise
             </button>
+            <NoteField
+              value={active.note}
+              onChange={setSessionNote}
+              placeholder="How did it go?"
+              addLabel="+ Workout note"
+              fieldLabel="Workout note"
+              className="sess-note"
+            />
             <button
               type="button"
               className={`btn ${active.dayType} sess-finish`}
@@ -149,24 +244,42 @@ export function ActiveSessionGate() {
             </button>
           </div>
 
-          {restStart != null && (
+          {restStartedAt != null && (
             <div className="sess-footer">
-              <RestTimerPill
-                remaining={remaining}
-                total={settings.restSeconds}
-                onSkip={() => setRestStart(null)}
-              />
+              <RestTimerPill remaining={remaining} total={settings.restSeconds} onSkip={clearRest} />
             </div>
           )}
 
           <AddExerciseSheet
-            open={addExOpen}
-            onClose={() => setAddExOpen(false)}
+            open={addExOpen || replaceIdx != null}
+            onClose={handleCloseAddSheet}
             exercises={exercises}
             activeExerciseIds={activeExerciseIds}
-            onAdd={addExerciseToActive}
+            onAdd={handleAddSheetSelect}
+            title={replaceExercise ? `Replace ${replaceExercise.name}` : undefined}
+          />
+
+          <ExerciseActionsSheet
+            open={actionsIdx != null}
+            exerciseName={actionsExercise?.name ?? ''}
+            canMoveUp={actionsIdx != null && actionsIdx > 0}
+            canMoveDown={actionsIdx != null && active != null && actionsIdx < active.exercises.length - 1}
+            onClose={() => setActionsIdx(null)}
+            onMoveUp={handleMoveUp}
+            onMoveDown={handleMoveDown}
+            onReplace={handleOpenReplace}
+            onRemove={handleRemoveFromActions}
           />
         </div>
+      )}
+
+      {active && sessionMinimized && (
+        <WorkoutPill
+          dayType={active.dayType}
+          elapsedMs={elapsedNow - active.startedAt}
+          restRemainingSec={restRemainingSec}
+          onReturn={() => setSessionMinimized(false)}
+        />
       )}
 
       <SummarySheet

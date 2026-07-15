@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { SessionExercise, DayType, Unit, LoggedSet } from '../../lib/types'
 import { ExerciseThumb } from '../../components/ExerciseThumb'
-import { CloseIcon, CheckIcon } from './icons'
+import { CloseIcon, CheckIcon, EllipsisIcon } from './icons'
+import { NoteField } from './NoteField'
 
 /** Formats a stored number the way we want it to appear once a field is "touched". */
 function formatNum(n: number): string {
@@ -152,7 +153,8 @@ export interface SessionExerciseCardProps {
   onCommitReps: (exIdx: number, setIdx: number, reps: number | null) => void
   onRemoveSet: (exIdx: number, setIdx: number) => void
   onAddSet: (exIdx: number) => void
-  onRemoveExercise: (exIdx: number) => void
+  onOpenActions: (exIdx: number) => void
+  onExerciseNote: (exIdx: number, note: string) => void
 }
 
 export function SessionExerciseCard({
@@ -164,7 +166,8 @@ export function SessionExerciseCard({
   onCommitReps,
   onRemoveSet,
   onAddSet,
-  onRemoveExercise,
+  onOpenActions,
+  onExerciseNote,
 }: SessionExerciseCardProps) {
   const doneCount = ex.sets.filter((s) => s.done).length
   return (
@@ -181,11 +184,11 @@ export function SessionExerciseCard({
         </div>
         <button
           type="button"
-          className="sess-ex-remove"
-          aria-label={`Remove ${ex.name} from this workout`}
-          onClick={() => onRemoveExercise(exIdx)}
+          className="sess-ex-actions"
+          aria-label={`${ex.name} options`}
+          onClick={() => onOpenActions(exIdx)}
         >
-          <CloseIcon />
+          <EllipsisIcon />
         </button>
       </div>
       <ul className="sess-sets">
@@ -207,6 +210,14 @@ export function SessionExerciseCard({
       <button type="button" className="btn-ghost sess-add-set" onClick={() => onAddSet(exIdx)}>
         + add set
       </button>
+      <NoteField
+        value={ex.note}
+        onChange={(note) => onExerciseNote(exIdx, note)}
+        placeholder="Notes for this exercise…"
+        addLabel="+ note"
+        fieldLabel={`${ex.name} note`}
+        className="sess-exnote"
+      />
     </div>
   )
 }

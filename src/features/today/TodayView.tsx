@@ -25,6 +25,7 @@ export function TodayView() {
   const activeSession = useStore((s) => s.activeSession)
   const startSession = useStore((s) => s.startSession)
   const cancelSession = useStore((s) => s.cancelSession)
+  const setSessionMinimized = useStore((s) => s.setSessionMinimized)
 
   const next = selectNextDayType({ sessions })
   const streak = selectStreak({ sessions, settings })
@@ -137,9 +138,7 @@ export function TodayView() {
           <button
             type="button"
             className="card today-resume"
-            onClick={() => {
-              /* the active-session overlay is already showing; nothing else to do */
-            }}
+            onClick={() => setSessionMinimized(false)}
           >
             <DayTypeBadge dayType={activeSession.dayType} />
             <p className="title today-resume-title">Workout in progress</p>
