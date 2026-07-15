@@ -428,6 +428,25 @@ describe('active-session lineup mutations, notes, rest timer, minimize', () => {
     expect(useStore.getState().sessionMinimized).toBe(false)
   })
 
+  it('export → reset → import round-trips session and per-exercise notes', () => {
+    useStore.getState().startSession('legs')
+    useStore.getState().setSessionNote('  heavy day  ')
+    useStore.getState().setExerciseNote(0, '  knees felt fine  ')
+    useStore.getState().finishSession()
+
+    const json = useStore.getState().exportData()
+    const parsed = JSON.parse(json)
+    expect(parsed.sessions[0].note).toBe('heavy day')
+    expect(parsed.sessions[0].exercises[0].note).toBe('knees felt fine')
+
+    useStore.getState().resetAll()
+    useStore.getState().importData(json)
+
+    const imported = useStore.getState().sessions[0]
+    expect(imported.note).toBe('heavy day')
+    expect(imported.exercises[0].note).toBe('knees felt fine')
+  })
+
   it('partialize persists restStartedAt and sessionMinimized to localStorage', () => {
     useStore.getState().startRest()
     useStore.getState().setSessionMinimized(true)
