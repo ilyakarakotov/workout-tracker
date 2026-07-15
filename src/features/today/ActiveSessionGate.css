@@ -92,13 +92,14 @@
 }
 
 .sess-ex-actions {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: var(--r-pill);
   color: var(--text-3);
-  margin: -4px -4px 0 0;
+  margin: -10px -10px 0 0;
 }
 
 .sess-ex-actions:active {

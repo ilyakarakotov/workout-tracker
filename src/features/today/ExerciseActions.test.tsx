@@ -134,4 +134,46 @@ describe('ActiveSessionGate — exercise ⋯ actions (move / replace / remove)',
       useStore.getState().activeSession!.exercises.some((e) => e.name === 'Bench Press'),
     ).toBe(false)
   })
+
+  it('an uncommitted, unparsed set-row buffer (e.g. "-") is discarded safely across a move — no stale text leaks into either slot', () => {
+    useStore.getState().startSession('push')
+    render(<ActiveSessionGate />)
+
+    const benchWeight = screen.getByLabelText('Bench Press set 1 weight (kg), not logged')
+    fireEvent.change(benchWeight, { target: { value: '-' } })
+    expect(benchWeight).toHaveValue('-')
+    // "-" never parses, so it was never committed to the store
+    expect(useStore.getState().activeSession!.exercises[0].sets[0].weightTouched).toBeFalsy()
+
+    fireEvent.click(screen.getByLabelText('Bench Press options'))
+    fireEvent.click(screen.getByRole('button', { name: 'Move down' }))
+
+    // Bench Press now sits at index 1 — its set-row must not carry the stray "-" forward
+    const movedField = screen.getByLabelText('Bench Press set 1 weight (kg), not logged')
+    expect(movedField).toHaveValue('')
+
+    // whatever now occupies the vacated first slot shows its own correct (untouched) data,
+    // not the buffer left behind by the exercise that used to render there
+    const newFirstName = useStore.getState().activeSession!.exercises[0].name
+    const newFirstField = screen.getByLabelText(`${newFirstName} set 1 weight (kg), not logged`)
+    expect(newFirstField).toHaveValue('')
+  })
+
+  it('an uncommitted set-row buffer is discarded safely when its exercise is replaced', () => {
+    useStore.getState().startSession('push')
+    render(<ActiveSessionGate />)
+
+    const benchReps = screen.getByLabelText('Bench Press set 1 reps, not logged')
+    fireEvent.change(benchReps, { target: { value: '-' } })
+    expect(benchReps).toHaveValue('-')
+
+    fireEvent.click(screen.getByLabelText('Bench Press options'))
+    fireEvent.click(screen.getByRole('button', { name: 'Replace exercise…' }))
+    fireEvent.click(screen.getByText('Squat'))
+
+    expect(useStore.getState().activeSession!.exercises[0].name).toBe('Squat')
+    const squatReps = screen.getByLabelText('Squat set 1 reps, not logged')
+    // fresh exercise, fresh row — no leaked "-" from the exercise it replaced
+    expect(squatReps).toHaveValue('')
+  })
 })
