@@ -59,6 +59,43 @@ export function SessionDetailSheet({
     }))
   }
 
+  const setNoteDraft = (note: string) => {
+    updateSession(session.id, (s) => ({ ...s, note }))
+  }
+
+  const commitNote = () => {
+    updateSession(session.id, (s) => {
+      const trimmed = s.note?.trim()
+      if (!trimmed) {
+        const { note: _note, ...rest } = s
+        return rest as Session
+      }
+      return { ...s, note: trimmed }
+    })
+  }
+
+  const setExerciseNoteDraft = (exIndex: number, note: string) => {
+    updateSession(session.id, (s) => ({
+      ...s,
+      exercises: s.exercises.map((ex, i) => (i !== exIndex ? ex : { ...ex, note })),
+    }))
+  }
+
+  const commitExerciseNote = (exIndex: number) => {
+    updateSession(session.id, (s) => ({
+      ...s,
+      exercises: s.exercises.map((ex, i) => {
+        if (i !== exIndex) return ex
+        const trimmed = ex.note?.trim()
+        if (!trimmed) {
+          const { note: _note, ...rest } = ex
+          return rest
+        }
+        return { ...ex, note: trimmed }
+      }),
+    }))
+  }
+
   const handleDelete = () => {
     if (!confirmingDelete) {
       setConfirmingDelete(true)
@@ -85,6 +122,25 @@ export function SessionDetailSheet({
           {editing ? 'Done' : 'Edit'}
         </button>
       </div>
+
+      {editing ? (
+        <div className="hist-note-edit">
+          <label className="label" htmlFor="hist-session-note">
+            Workout note
+          </label>
+          <textarea
+            id="hist-session-note"
+            className="hist-note-input"
+            rows={2}
+            placeholder="Add a note about this workout…"
+            value={session.note ?? ''}
+            onChange={(e) => setNoteDraft(e.target.value)}
+            onBlur={commitNote}
+          />
+        </div>
+      ) : session.note ? (
+        <blockquote className="hist-note">{session.note}</blockquote>
+      ) : null}
 
       {session.exercises.map((ex, exIndex) => (
         <div key={`${ex.exerciseId}-${exIndex}`} className="hist-ex-block">
@@ -128,6 +184,24 @@ export function SessionDetailSheet({
               ),
             )}
           </ul>
+          {editing ? (
+            <div className="hist-note-edit">
+              <label className="label" htmlFor={`hist-ex-note-${exIndex}`}>
+                {ex.name} note
+              </label>
+              <textarea
+                id={`hist-ex-note-${exIndex}`}
+                className="hist-note-input"
+                rows={2}
+                placeholder="Add a note about this exercise…"
+                value={ex.note ?? ''}
+                onChange={(e) => setExerciseNoteDraft(exIndex, e.target.value)}
+                onBlur={() => commitExerciseNote(exIndex)}
+              />
+            </div>
+          ) : ex.note ? (
+            <blockquote className="hist-note hist-ex-note">{ex.note}</blockquote>
+          ) : null}
         </div>
       ))}
 

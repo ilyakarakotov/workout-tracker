@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../../store/store'
 import { DayTypeBadge } from '../../components/DayTypeBadge'
 import { monthGrid, monthLabel } from './monthGrid'
+import { sessionHasNotes } from './notes'
 import { SessionDetailSheet } from './SessionDetailSheet'
 import { formatDate, isSameDay, startOfWeek, ymd } from '../../lib/dates'
 import { completedSetCount, prsInSession, sessionVolume, weeklyCounts } from '../../lib/stats'
@@ -10,6 +11,28 @@ import './history.css'
 
 const DOW_MON = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const DOW_SUN = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+
+function NoteGlyph() {
+  return (
+    <svg
+      className="hist-session-note-glyph"
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      aria-label="has notes"
+      role="img"
+    >
+      <path
+        d="M6 3.5h9.5L19 7v13.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M9 12h6M9 15.5h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 function shiftMonth(
   a: { year: number; month: number },
@@ -164,6 +187,7 @@ export function HistoryView() {
               <div className="hist-session-list">
                 {g.sessions.map((s) => {
                   const hasPr = prsInSession(sessions, s).length > 0
+                  const hasNotes = sessionHasNotes(s)
                   return (
                     <button
                       key={s.id}
@@ -180,6 +204,7 @@ export function HistoryView() {
                           {settings.unit}
                         </span>
                       </span>
+                      {hasNotes ? <NoteGlyph /> : null}
                       {hasPr ? (
                         <span className="hist-session-pr" aria-label="Personal record">
                           ★
