@@ -570,6 +570,16 @@ export const useStore = create<AppState>()(
     {
       name: STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
+      // deep-merge settings so blobs persisted before a settings field existed
+      // rehydrate with that field's default instead of undefined
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>
+        return {
+          ...current,
+          ...p,
+          settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) },
+        }
+      },
       partialize: (st) => ({
         exercises: st.exercises,
         templates: st.templates,
