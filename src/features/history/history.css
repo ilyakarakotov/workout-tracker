@@ -181,6 +181,11 @@
   font-size: 15px;
 }
 
+.hist-session-note-glyph {
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
 .hist-session-chevron {
   color: var(--text-3);
   font-size: 18px;
@@ -212,6 +217,31 @@
 
 .hist-ex-name {
   font-weight: 700;
+}
+
+.hist-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 2px solid var(--hairline);
+  color: var(--text-2);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.hist-ex-note {
+  margin-top: -2px;
+}
+
+.hist-note-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hist-note-input {
+  width: 100%;
+  resize: vertical;
+  font-style: normal;
 }
 
 .hist-set-list {
