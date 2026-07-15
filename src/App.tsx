@@ -11,6 +11,7 @@ import { PlanView } from './features/plan/PlanView'
 export default function App() {
   const [view, setView] = useState<ViewId>('today')
   const hasActive = useStore((s) => s.activeSession !== null)
+  const sessionMinimized = useStore((s) => s.sessionMinimized)
 
   return (
     <>
@@ -20,7 +21,7 @@ export default function App() {
         {view === 'progress' && <ProgressView />}
         {view === 'plan' && <PlanView />}
       </main>
-      {!hasActive && <TabBar active={view} onChange={setView} />}
+      {(!hasActive || sessionMinimized) && <TabBar active={view} onChange={setView} />}
       <ActiveSessionGate />
     </>
   )
