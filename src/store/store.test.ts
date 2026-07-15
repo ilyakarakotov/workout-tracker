@@ -228,6 +228,242 @@ describe('store', () => {
   })
 })
 
+describe('active-session lineup mutations, notes, rest timer, minimize', () => {
+  beforeEach(reset)
+
+  it('replaceExerciseInActive replaces in place and prefills from the replaced-in exercise last actuals', () => {
+    // give deadlift some history to prefill from
+    useStore.getState().startSession('pull')
+    useStore.getState().enterActiveWeight(0, 0, 140)
+    useStore.getState().enterActiveReps(0, 0, 3)
+    useStore.getState().finishSession()
+
+    useStore.getState().startSession('push')
+    const before = useStore.getState().activeSession!.exercises
+    expect(before[0].exerciseId).toBe('bench-press')
+    const originalLength = before.length
+
+    useStore.getState().replaceExerciseInActive(0, 'deadlift')
+    const active = useStore.getState().activeSession!
+    expect(active.exercises).toHaveLength(originalLength)
+    expect(active.exercises[0].exerciseId).toBe('deadlift')
+    expect(active.exercises[0].name).toBe('Deadlift')
+    expect(active.exercises[0].sets[0].weight).toBe(140)
+    expect(active.exercises[0].sets[0].reps).toBe(3)
+    expect(active.exercises[0].sets[0].done).toBe(false)
+    // other positions untouched
+    expect(active.exercises[1].exerciseId).toBe('overhead-press')
+  })
+
+  it('replaceExerciseInActive discards the old exercise sets and note', () => {
+    useStore.getState().startSession('push')
+    useStore.getState().enterActiveReps(0, 0, 8)
+    useStore.getState().setExerciseNote(0, 'felt heavy')
+    useStore.getState().replaceExerciseInActive(0, 'deadlift')
+    const ex = useStore.getState().activeSession!.exercises[0]
+    expect(ex.note).toBeUndefined()
+    expect(ex.sets.every((s) => !s.done)).toBe(true)
+  })
+
+  it('replaceExerciseInActive rejects an unknown exercise id', () => {
+    useStore.getState().startSession('push')
+    const before = useStore.getState().activeSession!.exercises
+    useStore.getState().replaceExerciseInActive(0, 'does-not-exist')
+    expect(useStore.getState().activeSession!.exercises).toEqual(before)
+  })
+
+  it('replaceExerciseInActive rejects a duplicate id already in the active lineup', () => {
+    useStore.getState().startSession('push')
+    const before = useStore.getState().activeSession!.exercises
+    // overhead-press is already at index 1
+    useStore.getState().replaceExerciseInActive(0, 'overhead-press')
+    expect(useStore.getState().activeSession!.exercises).toEqual(before)
+  })
+
+  it('replaceExerciseInActive rejects an out-of-range index', () => {
+    useStore.getState().startSession('push')
+    const before = useStore.getState().activeSession!.exercises
+    useStore.getState().replaceExerciseInActive(999, 'deadlift')
+    expect(useStore.getState().activeSession!.exercises).toEqual(before)
+  })
+
+  it('replaceExerciseInActive is a no-op with no active session', () => {
+    useStore.getState().replaceExerciseInActive(0, 'deadlift')
+    expect(useStore.getState().activeSession).toBeNull()
+  })
+
+  it('moveExerciseInActive swaps positions up and down', () => {
+    useStore.getState().startSession('push')
+    const first = useStore.getState().activeSession!.exercises[0].exerciseId
+    const second = useStore.getState().activeSession!.exercises[1].exerciseId
+
+    useStore.getState().moveExerciseInActive(0, 1)
+    let ex = useStore.getState().activeSession!.exercises
+    expect(ex[0].exerciseId).toBe(second)
+    expect(ex[1].exerciseId).toBe(first)
+
+    useStore.getState().moveExerciseInActive(1, -1)
+    ex = useStore.getState().activeSession!.exercises
+    expect(ex[0].exerciseId).toBe(first)
+    expect(ex[1].exerciseId).toBe(second)
+  })
+
+  it('moveExerciseInActive clamps at the boundaries (no-op)', () => {
+    useStore.getState().startSession('push')
+    const before = useStore.getState().activeSession!.exercises
+    useStore.getState().moveExerciseInActive(0, -1)
+    expect(useStore.getState().activeSession!.exercises).toEqual(before)
+    const lastIndex = before.length - 1
+    useStore.getState().moveExerciseInActive(lastIndex, 1)
+    expect(useStore.getState().activeSession!.exercises).toEqual(before)
+  })
+
+  it('template immutability: add/replace/move/remove-exercise/add-set/remove-set on the active session never touch templates', () => {
+    const templatesBefore = structuredClone(useStore.getState().templates)
+    useStore.getState().startSession('push')
+    useStore.getState().addExerciseToActive('deadlift')
+    useStore.getState().replaceExerciseInActive(0, 'pull-up')
+    useStore.getState().moveExerciseInActive(0, 1)
+    useStore.getState().removeExerciseFromActive(2)
+    useStore.getState().addSetToActive(0)
+    useStore.getState().removeSetFromActive(0, 0)
+    expect(useStore.getState().templates).toEqual(templatesBefore)
+  })
+
+  it('setSessionNote stores raw text while editing and finishSession trims it into history', () => {
+    useStore.getState().startSession('push')
+    useStore.getState().setSessionNote('  felt strong today  ')
+    expect(useStore.getState().activeSession!.note).toBe('  felt strong today  ')
+    useStore.getState().finishSession()
+    expect(useStore.getState().sessions[0].note).toBe('felt strong today')
+  })
+
+  it('whitespace-only session and exercise notes become absent after finishSession', () => {
+    useStore.getState().startSession('push')
+    useStore.getState().setSessionNote('   ')
+    useStore.getState().setExerciseNote(0, '\t  \n')
+    useStore.getState().finishSession()
+    const s = useStore.getState().sessions[0]
+    expect(s).not.toHaveProperty('note')
+    expect(s.exercises[0]).not.toHaveProperty('note')
+  })
+
+  it('notes are editable mid-session — the latest value wins', () => {
+    useStore.getState().startSession('push')
+    useStore.getState().setSessionNote('first draft')
+    useStore.getState().setSessionNote('second draft')
+    expect(useStore.getState().activeSession!.note).toBe('second draft')
+
+    useStore.getState().setExerciseNote(0, 'note A')
+    useStore.getState().setExerciseNote(0, 'note B')
+    expect(useStore.getState().activeSession!.exercises[0].note).toBe('note B')
+  })
+
+  it('per-exercise note survives set logging and reorder (moves with its exercise)', () => {
+    useStore.getState().startSession('push')
+    useStore.getState().setExerciseNote(0, 'triset with pause')
+    useStore.getState().enterActiveWeight(0, 0, 65)
+    useStore.getState().enterActiveReps(0, 0, 6)
+    expect(useStore.getState().activeSession!.exercises[0].note).toBe('triset with pause')
+
+    useStore.getState().moveExerciseInActive(0, 1)
+    const ex = useStore.getState().activeSession!.exercises
+    expect(ex[1].note).toBe('triset with pause')
+    expect(ex[1].sets[0].weight).toBe(65)
+    expect(ex[0].note).toBeUndefined()
+  })
+
+  it('startRest/clearRest set and clear restStartedAt', () => {
+    const now = 1_700_000_000_000
+    vi.useFakeTimers()
+    vi.setSystemTime(now)
+    try {
+      expect(useStore.getState().restStartedAt).toBeNull()
+      useStore.getState().startRest()
+      expect(useStore.getState().restStartedAt).toBe(now)
+      useStore.getState().clearRest()
+      expect(useStore.getState().restStartedAt).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('finishSession, cancelSession, and startSession reset restStartedAt and sessionMinimized', () => {
+    useStore.getState().startSession('push')
+    useStore.getState().startRest()
+    useStore.getState().setSessionMinimized(true)
+    useStore.getState().finishSession()
+    expect(useStore.getState().restStartedAt).toBeNull()
+    expect(useStore.getState().sessionMinimized).toBe(false)
+
+    useStore.getState().startSession('pull')
+    useStore.getState().startRest()
+    useStore.getState().setSessionMinimized(true)
+    useStore.getState().cancelSession()
+    expect(useStore.getState().restStartedAt).toBeNull()
+    expect(useStore.getState().sessionMinimized).toBe(false)
+
+    // startSession itself also resets them, even if leftover state existed
+    useStore.setState({ restStartedAt: 123, sessionMinimized: true })
+    useStore.getState().startSession('legs')
+    expect(useStore.getState().restStartedAt).toBeNull()
+    expect(useStore.getState().sessionMinimized).toBe(false)
+  })
+
+  it('importData and resetAll always reset restStartedAt/sessionMinimized to defaults', () => {
+    useStore.getState().startSession('legs')
+    useStore.getState().finishSession()
+    const json = useStore.getState().exportData()
+    expect(JSON.parse(json)).not.toHaveProperty('restStartedAt')
+    expect(JSON.parse(json)).not.toHaveProperty('sessionMinimized')
+
+    useStore.setState({ restStartedAt: 999, sessionMinimized: true })
+    useStore.getState().importData(json)
+    expect(useStore.getState().restStartedAt).toBeNull()
+    expect(useStore.getState().sessionMinimized).toBe(false)
+
+    useStore.setState({ restStartedAt: 999, sessionMinimized: true })
+    useStore.getState().resetAll()
+    expect(useStore.getState().restStartedAt).toBeNull()
+    expect(useStore.getState().sessionMinimized).toBe(false)
+  })
+
+  it('partialize persists restStartedAt and sessionMinimized to localStorage', () => {
+    useStore.getState().startRest()
+    useStore.getState().setSessionMinimized(true)
+    const raw = localStorage.getItem(STORAGE_KEY)
+    expect(raw).toBeTruthy()
+    const parsed = JSON.parse(raw!)
+    expect(typeof parsed.state.restStartedAt).toBe('number')
+    expect(parsed.state.sessionMinimized).toBe(true)
+  })
+
+  it('old-shape persisted JSON without restStartedAt/sessionMinimized rehydrates to null/false', async () => {
+    localStorage.removeItem(STORAGE_KEY)
+    const oldShape = {
+      state: {
+        exercises: {},
+        templates: {
+          push: { dayType: 'push', exercises: [] },
+          pull: { dayType: 'pull', exercises: [] },
+          legs: { dayType: 'legs', exercises: [] },
+        },
+        sessions: [],
+        activeSession: null,
+        settings: { unit: 'kg', weekStartsOn: 1, weeklyGoal: 6, restSeconds: 90 },
+        // no restStartedAt / sessionMinimized keys at all
+      },
+      version: 0,
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(oldShape))
+
+    vi.resetModules()
+    const fresh = await import('./store')
+    expect(fresh.useStore.getState().restStartedAt).toBeNull()
+    expect(fresh.useStore.getState().sessionMinimized).toBe(false)
+  })
+})
+
 describe('storage key migration', () => {
   const LEGACY_KEY = 'forge.v1'
 
