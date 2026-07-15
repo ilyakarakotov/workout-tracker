@@ -18,3 +18,23 @@ export function shouldStartRestTimer(
 ): boolean {
   return !wasDone && repsCommitted !== null && restSeconds > 0
 }
+
+/** Ticker cadence the active-session gate re-renders the rest countdown on. */
+export const REST_TICK_MS = 1000
+
+/**
+ * True once a running rest window is expired by more than a single tick —
+ * i.e. it did not just naturally cross zero while the gate stayed mounted
+ * (that boundary is handled live by the buzz effect), it was already over
+ * before this render happened at all, e.g. the countdown ran out while the
+ * tab was closed or backgrounded and only got checked again on reload. Such
+ * a timer should be cleared silently, with no buzz.
+ */
+export function isStaleRest(
+  restStartedAt: number | null,
+  restSeconds: number,
+  now: number,
+): boolean {
+  if (restStartedAt == null || restSeconds <= 0) return false
+  return now - restStartedAt > restSeconds * 1000 + REST_TICK_MS
+}

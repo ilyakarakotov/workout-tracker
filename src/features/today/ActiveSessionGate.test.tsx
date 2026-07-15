@@ -18,6 +18,7 @@ describe('ActiveSessionGate — rest timer wiring', () => {
   afterEach(() => {
     cleanup()
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('starts the rest timer exactly once on the false→true reps transition, not on later keystrokes that keep the set done', () => {
@@ -102,5 +103,102 @@ describe('ActiveSessionGate — rest timer wiring', () => {
     })
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
     expect(useStore.getState().activeSession!.exercises[0].sets[0].done).toBe(false)
+  })
+
+  it('clears a stale rest timer inherited from a reload without buzzing', () => {
+    useStore.getState().startSession('push')
+    // Simulate a persisted restStartedAt from well before the reload — far
+    // past the 90s default duration, unlike the natural single-tick boundary
+    // the live countdown crosses on its own (covered by the next test).
+    const staleStart = Date.now() - 95_000
+    useStore.setState({ restStartedAt: staleStart })
+    const vibrateSpy = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('navigator', { ...navigator, vibrate: vibrateSpy })
+
+    render(<ActiveSessionGate />)
+
+    expect(useStore.getState().restStartedAt).toBeNull()
+    expect(vibrateSpy).not.toHaveBeenCalled()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('still buzzes when the countdown naturally reaches zero while mounted', () => {
+    useStore.getState().startSession('push')
+    render(<ActiveSessionGate />)
+    const vibrateSpy = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('navigator', { ...navigator, vibrate: vibrateSpy })
+
+    fireEvent.change(screen.getByLabelText('Bench Press set 1 reps, not logged'), {
+      target: { value: '8' },
+    })
+    act(() => {
+      vi.advanceTimersByTime(90_000)
+    })
+
+    expect(vibrateSpy).toHaveBeenCalledWith([10, 60, 20])
+    expect(useStore.getState().restStartedAt).toBeNull()
+  })
+})
+
+describe('ActiveSessionGate — minimize + floating pill', () => {
+  beforeEach(() => {
+    reset()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+  })
+
+  it('renders no pill when there is no active session', () => {
+    render(<ActiveSessionGate />)
+    expect(screen.queryByRole('button', { name: /Return to/ })).not.toBeInTheDocument()
+  })
+
+  it('minimizing hides the takeover and shows the floating pill; tapping the pill restores the takeover', () => {
+    useStore.getState().startSession('push')
+    render(<ActiveSessionGate />)
+
+    expect(screen.getByText('Finish workout')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Return to/ })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByLabelText('Hide workout — it keeps running'))
+
+    expect(screen.queryByText('Finish workout')).not.toBeInTheDocument()
+    expect(useStore.getState().sessionMinimized).toBe(true)
+    const pill = screen.getByRole('button', { name: /^Return to Push workout, 0:00 elapsed$/ })
+    expect(pill).toBeInTheDocument()
+
+    fireEvent.click(pill)
+
+    expect(useStore.getState().sessionMinimized).toBe(false)
+    expect(screen.getByText('Finish workout')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Return to/ })).not.toBeInTheDocument()
+  })
+
+  it('shows the rest countdown on the pill while a rest timer is running and minimized', () => {
+    useStore.getState().startSession('push')
+    render(<ActiveSessionGate />)
+
+    fireEvent.change(screen.getByLabelText('Bench Press set 1 reps, not logged'), {
+      target: { value: '8' },
+    })
+    fireEvent.click(screen.getByLabelText('Hide workout — it keeps running'))
+
+    expect(
+      screen.getByRole('button', {
+        name: /^Return to Push workout, 0:00 elapsed, rest 1:30 remaining$/,
+      }),
+    ).toBeInTheDocument()
+
+    act(() => {
+      vi.advanceTimersByTime(5000)
+    })
+    expect(
+      screen.getByRole('button', {
+        name: /^Return to Push workout, 0:05 elapsed, rest 1:25 remaining$/,
+      }),
+    ).toBeInTheDocument()
   })
 })

@@ -27,9 +27,26 @@
   font-weight: 700;
 }
 
+.sess-minimize {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  color: var(--text-2);
+  margin-left: -8px;
+}
+
+.sess-minimize:active {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
 .sess-close {
   width: 44px;
   height: 44px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: var(--r-pill);
@@ -74,7 +91,7 @@
   margin-bottom: 2px;
 }
 
-.sess-ex-remove {
+.sess-ex-actions {
   width: 32px;
   height: 32px;
   display: grid;
@@ -84,8 +101,40 @@
   margin: -4px -4px 0 0;
 }
 
-.sess-ex-remove:active {
+.sess-ex-actions:active {
   background: var(--surface-2);
+  color: var(--text);
+}
+
+/* ---- exercise ⋯ actions sheet ---- */
+
+.sess-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sess-action-item {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 4px;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--r-control);
+  color: var(--text);
+}
+
+.sess-action-item:active:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.sess-action-item:disabled {
+  color: var(--text-3);
+  cursor: default;
+}
+
+.sess-action-danger {
   color: var(--danger);
 }
 

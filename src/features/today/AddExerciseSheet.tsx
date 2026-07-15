@@ -12,12 +12,14 @@ export function AddExerciseSheet({
   exercises,
   activeExerciseIds,
   onAdd,
+  title = 'Add exercise',
 }: {
   open: boolean
   onClose: () => void
   exercises: Record<string, Exercise>
   activeExerciseIds: Set<string>
   onAdd: (exerciseId: string) => void
+  title?: string
 }) {
   const grouped = useMemo(() => {
     const by: Record<GroupKey, Exercise[]> = { push: [], pull: [], legs: [], other: [] }
@@ -31,7 +33,7 @@ export function AddExerciseSheet({
   const isEmpty = GROUPS.every((g) => grouped[g].length === 0)
 
   return (
-    <Sheet open={open} onClose={onClose} title="Add exercise">
+    <Sheet open={open} onClose={onClose} title={title}>
       {isEmpty ? (
         <p className="micro">Every library exercise is already in this workout.</p>
       ) : (

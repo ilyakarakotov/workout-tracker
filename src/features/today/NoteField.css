@@ -1,0 +1,72 @@
+/* Shared visual language for the workout-level (.sess-note-*) and
+ * per-exercise (.sess-exnote-*) note fields rendered by NoteField.tsx. */
+
+.sess-note-add,
+.sess-exnote-add {
+  width: 100%;
+}
+
+.sess-exnote-add {
+  margin-top: 12px;
+}
+
+.sess-note-view,
+.sess-exnote-view {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--hairline);
+  background: var(--surface-2);
+}
+
+.sess-exnote-view {
+  margin-top: 12px;
+}
+
+.sess-note-text,
+.sess-exnote-text {
+  margin-top: 2px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sess-note-edit,
+.sess-exnote-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.sess-exnote-edit {
+  margin-top: 12px;
+}
+
+.sess-note-textarea,
+.sess-exnote-textarea {
+  width: 100%;
+  min-height: 76px;
+  padding: 10px 12px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--hairline);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+.sess-note-textarea::placeholder,
+.sess-exnote-textarea::placeholder {
+  color: var(--text-3);
+}
+
+.sess-note-textarea:focus-visible,
+.sess-exnote-textarea:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
