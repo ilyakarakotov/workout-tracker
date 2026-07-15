@@ -31,7 +31,7 @@ Open app → Today shows the weekly ring + "Next up: **Push**" (auto-rotation P�
 - Header: day-type badge + elapsed time + close (cancel with confirm) .
 - One card per exercise: set rows `weight × reps` with a big check target. Tap the check → set completed (with prefilled values), spring animation + `navigator.vibrate(10)`.
 - Tap the weight/reps of a row → inline steppers (weight ±2.5 kg / ±5 lb, reps ±1).
-- **Rest timer**: after completing a set, a countdown chip (default 90 s) appears at the bottom; tap to skip. Pure in-app (no notifications).
+- **Rest timer**: after completing a set, a full-width countdown bar (default 90 s) floats at the bottom; tap Skip to end early. In-app by default; an opt-in "Rest alerts" setting (Settings) additionally fires a system notification + app badge when rest ends while the app is backgrounded.
 - Add set (per exercise), add exercise (from library), remove via row swipe-or-menu.
 - **Finish** → summary sheet: duration, total volume, sets completed, PRs hit (gold badges), ring animates +1 segment. "Done" returns to Today.
 
